@@ -18,6 +18,7 @@ const formatStatus = (status) => {
   switch (Number(status)) {
     case 0: return "Scheduled";
     case 1: return "Payable";
+    default: return "";
   }
 }
 
