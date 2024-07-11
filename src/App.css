@@ -1,12 +1,6 @@
-.App {
-  text-align: center;
+.App{
+  padding: 8px;
 }
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
@@ -17,9 +11,6 @@
   background-color: #282c34;
   min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
 }
@@ -35,4 +26,81 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px 15px; /* 10px vertical padding, 15px horizontal padding */
+  text-align: left; /* Align text to the left */
+  border: 1px solid #ddd; /* Add a light border to cells */
+}
+
+
+.table-coupons{
+  margin-top: 20px;
+}
+
+.link {
+  background-color: #282c34;
+  color: #61dafb;
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.link:hover {
+  background-color: #1f2228;
+  color: #61dafb;
+}
+
+.m1{
+  margin:10px;
+}
+
+.eth-address-input {
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  width: 300px; /* Adjust width as needed */
+}
+
+.eth-address-input:focus {
+  outline: none;
+  border-color: #61dafb; /* Change border color on focus */
+  box-shadow: 0 0 5px rgba(97, 218, 251, 0.5); /* Add a lighter box-shadow on focus */
+}
+
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px; /* Adjust height as needed */
+}
+
+.spinner {
+  border: 3px solid rgba(97, 218, 251, 0.2); /* Light border color */
+  border-top: 3px solid #61dafb; /* Match the link color */
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite; /* Animation to rotate spinner */
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+td, th {
+  font-size: 0.8em;
 }
