@@ -104,3 +104,90 @@ th, td {
 td, th {
   font-size: 0.8em;
 }
+
+/* Example theme colors */
+:root {
+  --primary-color: #4CAF50; /* Primary color for the button */
+  --secondary-color: #ffffff; /* Secondary color for the text */
+  --hover-color: #45a049; /* Hover color */
+  --border-radius: 5px; /* Border radius */
+  --font-family: 'Arial', sans-serif; /* Font family */
+}
+
+.connect-wallet-button {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  border: none;
+  border-radius: var(--border-radius);
+  padding: 6px 12px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.connect-wallet-button:hover {
+  background-color: var(--hover-color);
+  transform: scale(1.05);
+}
+
+.connect-wallet-button:active {
+  background-color: var(--hover-color);
+  transform: scale(0.95);
+}
+
+
+.top-right{
+  position: absolute;
+  right: 10px;
+}
+
+.address-container {
+  margin-top: 20px;
+}
+
+.connected-address {
+  background-color: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 5px;
+  font-family: monospace;
+  font-size: 14px;
+  color: #333333;
+}
+
+
+.disconnect-wallet-button {
+  margin-left: 10px;
+  padding: 5px 10px;
+  background-color: #f44336; /* Red */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.disconnect-wallet-button:hover {
+  background-color: #d32f2f; /* Darker red */
+}
+
+.rw-sb{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+.address-text{
+  display: inline-flex;
+  padding: 0px 6px ;
+  border-radius: 6px;
+  background-color: rgba(240, 240, 240, 0.9); 
+  transition: background-color 0.3s ease;
+}
+
+
+.address-text:hover {
+  background-color: rgba(200, 200, 200, 0.9);
+}
