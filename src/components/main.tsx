@@ -7,19 +7,19 @@ const paymentToken = "USD";
 const providerUrl = "https://alfajores-forno.celo-testnet.org";
 const explorerUrl = "https://alfajores.celoscan.io";
 
-const isNotZeroAddress = (address) => {
+const isNotZeroAddress = (address: string) => {
   const zeroAddress = "0x0000000000000000000000000000000000000000";
   return Web3.utils.isAddress(address) && address.toLowerCase() !== zeroAddress.toLowerCase();
 }
 
 function Main() {
-  const [debtAddress, setDebtAddress] = useState("0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d");
-  const [loading, setLoading] = useState(false);
-  const [coupons, setCoupons] = useState([]);
-  const [tokenName, setTokenName] = useState("");
-  const [tokenSymbol, setTokenSymbol] = useState("");
-  const [vendor, setVendor] = useState("");
-  const [rating, setRating] = useState("");
+  const [debtAddress, setDebtAddress] = useState<string>("0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d");
+  const [loading, setLoading] = useState<boolean>(false);
+  const [coupons, setCoupons] = useState<any[]>([]);
+  const [tokenName, setTokenName] = useState<string>("");
+  const [tokenSymbol, setTokenSymbol] = useState<string>("");
+  const [vendor, setVendor] = useState<string>("");
+  const [rating, setRating] = useState<string>("");
 
 
   const loadContract = useCallback(async () => {
@@ -40,12 +40,14 @@ function Main() {
       setRating(await contract.methods.rating().call());
       
       const couponsN = await contract.methods.couponsLength().call();
+      
       let coupons_ = [];
-      for (let i = 0; i < couponsN; i++) {
+      for (let i = 0; i < Number(couponsN); i++) {
         const coupon = await contract.methods.coupons(i).call();
         coupons_.push(coupon);
       }
       setCoupons(coupons_);
+    
 
 
       setLoading(false);
