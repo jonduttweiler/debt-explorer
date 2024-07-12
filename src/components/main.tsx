@@ -119,7 +119,7 @@ function Main() {
       const web3 = new Web3(providerUrl);
       const contract = new web3.eth.Contract(debtAbi, debtAddress);
       setContract(contract);
-      
+
     } catch (error) {
       console.error('Error loading contract:', error);
       setLoading(false);
@@ -129,6 +129,7 @@ function Main() {
 
 
   async function loadDataFromContract(contract: Contract<AbiItem[]>) {
+    console.log(`Load data from contract`)
     setTokenName(await contract.methods.name().call());
     setTokenSymbol(await contract.methods.symbol().call());
     setVendor(await contract.methods.vendor().call());
@@ -221,6 +222,22 @@ function Main() {
         {(isNotZeroAddress(vendor)) && `${vendor}`}
         {"Rating: " + rating ? rating : ""}
       </div>
+
+      {contract != null && (
+        <button onClick={async () => {
+          try {
+            const result = await contract.methods.updateCouponRate(0, BigInt(7 * 10 ** 16)) //7%
+              .send({
+                from: accounts[0],
+                gas: 500000 
+              })
+            console.log(result);
+          } catch (err) {
+            console.log(err);
+          }
+
+        }}>Send demo transaction</button>
+      )}
 
       {
         loading ? (
