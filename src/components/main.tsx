@@ -1,18 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import debtAbi from "../contracts/debt.abi.json";
-import Web3, { AbiItem, Contract } from "web3";
+import Web3, { AbiItem, Contract, TransactionRevertedWithoutReasonError } from "web3";
 import CouponsTable from "./CouponsTable";
 import { useSyncProviders } from "../hooks/useSyncProviders";
 const paymentToken = "USD";
-
-interface DebtContract {
-  name: () => Promise<string>;
-  symbol: () => Promise<string>;
-  vendor: () => Promise<string>;
-  rating: () => Promise<string>;
-  couponsLength: () => Promise<number>;
-  coupons: (index: number) => Promise<any>;
-}
 
 const providerUrl = "https://alfajores-forno.celo-testnet.org";
 const explorerUrl = "https://alfajores.celoscan.io";
@@ -43,6 +34,9 @@ function Main() {
   const [connected, setConnected] = useState<boolean>(false);/* TODO: SYNC WITH STORE */
   const [networkId, setNetworkId] = useState<string>("");
   const [accounts, setAccounts] = useState<string[]>([]);
+
+  const cIndexRef = useRef<HTMLInputElement>(null);
+  const rateRef = useRef<HTMLInputElement>(null);
 
   const [web3, setWeb3] = useState<any>(null); // State variable to hold web3 instance
   const [contract, setContract] = useState<any>(null); // State variable to hold contract instance
@@ -146,6 +140,22 @@ function Main() {
     setLoading(false);
 
   }
+
+
+  async function updateCoupon(couponIndex: number){
+    const updated = await contract.methods.coupons(couponIndex).call();
+
+    console.log(updated);
+
+    setCoupons(coupons => {
+      coupons[couponIndex] = updated;
+      console.log(coupons);
+      return coupons;
+    });
+
+
+  }
+
   useEffect(function () {
     loadContract();
   }, [loadContract]);
@@ -223,20 +233,70 @@ function Main() {
         {"Rating: " + rating ? rating : ""}
       </div>
 
-      {contract != null && (
+      {/*       <div>
+        Check roles
         <button onClick={async () => {
           try {
-            const result = await contract.methods.updateCouponRate(0, BigInt(7 * 10 ** 16)) //7%
-              .send({
-                from: accounts[0],
-                gas: 500000 
-              })
-            console.log(result);
+            if (contract) {
+              console.log(`Checking role BOND_ADMIN_ROLE for ${accounts[0]}`)
+              const result = await contract.methods.hasRole(web3.utils.soliditySha3("BOND_ADMIN_ROLE"), accounts[0]).call(); //false
+              console.log(result)
+            }
+
           } catch (err) {
             console.log(err);
           }
+        }
 
-        }}>Send demo transaction</button>
+        }>Check role</button>
+
+      </div>
+ */}
+{/* Move to a dedicated component */}
+      {contract != null && accounts[0] != null && (
+        <div>
+
+          <input type="text" ref={cIndexRef} placeholder="coupon index"/>
+          <input type="text" ref={rateRef} placeholder="rate %"/>
+          
+
+          <button onClick={async () => {
+            try {
+              if(cIndexRef.current && rateRef.current){
+                const couponIndex = parseInt(cIndexRef.current.value, 10); 
+                if(couponIndex >= coupons.length){
+                  throw new Error("Coupon index out of bounds");
+                }
+
+                const rateValue = Number(rateRef.current.value);
+                const rate = BigInt(rateValue* 10 ** 16);
+                const result = await contract.methods.updateCouponRate(couponIndex,rate)
+                  .send({
+                    from: accounts[0], /* Get the account of fmk admin for deployed , another option will be to use a account as current or detect changes on the wallet*/
+                    gas: 500000
+                  })
+                  .on('confirmation',async function(confirmationNumber:any, receipt:any){
+                    console.log(`confirmed`);
+                    console.log(confirmationNumber);
+                    console.log(receipt);
+                    await updateCoupon(couponIndex);
+                  
+                })
+                console.log(result);
+                
+              }
+            } catch (err) {
+              console.log(err);
+              if (err instanceof TransactionRevertedWithoutReasonError) {
+                console.log(err);
+
+              }
+
+
+            }
+
+          }}>Send demo transaction (updateCouponRate)</button>
+        </div>
       )}
 
       {
