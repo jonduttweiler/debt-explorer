@@ -40,8 +40,8 @@ function Main() {
 
   const cIndexRef = useRef<HTMLInputElement>(null);
   const rateRef = useRef<HTMLInputElement>(null);
-
-  const [web3, setWeb3] = useState<any>(null); // State variable to hold web3 instance
+// eslint-disable-next-line
+  const [_web3, setWeb3] = useState<any>(null); // State variable to hold web3 instance
   const [contract, setContract] = useState<any>(null); // State variable to hold contract instance
 
 
@@ -81,7 +81,7 @@ function Main() {
       console.log(`Network id: ${networkId}`)
       setNetworkId(networkId);
 
-      if (networkId != celoAlfajoresChainId) {
+      if (networkId !== celoAlfajoresChainId) {
         await switchToCeloAlfajores(providerWithInfo.provider);
       }
       console.log(`Update web3 and contract`);
