@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams } from 'react-router-dom';
 import debtAbi from "../contracts/debt.abi.json";
 import Web3, { AbiItem, Contract, TransactionRevertedWithoutReasonError } from "web3";
 import CouponsTable from "./CouponsTable";
@@ -24,7 +25,9 @@ const shortenAddress = (address: string) => {
 
 function Main() {
   const providers = useSyncProviders();
-  const [debtAddress, setDebtAddress] = useState<string>("0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d");
+  const { address } = useParams();
+  const [debtAddress, setDebtAddress] = useState<string>(address  || "0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d");
+
   const [loading, setLoading] = useState<boolean>(false);
   const [coupons, setCoupons] = useState<any[]>([]);
   const [tokenName, setTokenName] = useState<string>("");
@@ -142,7 +145,7 @@ function Main() {
   }
 
 
-  async function updateCoupon(couponIndex: number){
+  async function updateCoupon(couponIndex: number) {
     const updated = await contract.methods.coupons(couponIndex).call();
 
     console.log(updated);
@@ -220,16 +223,24 @@ function Main() {
       </div>
 
       <div>
-        <div className="m1">
-          <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${debtAddress}`}>
-            {tokenSymbol && (
-              <span>
-                Token: {tokenName} ({tokenSymbol})
-              </span>
-            )}
-          </a>
-        </div>
-        {(isNotZeroAddress(vendor)) && `${vendor}`}
+        {tokenSymbol && (
+          <div className="m1">
+            <>
+              Token:
+              <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${debtAddress}`}>
+                <span>
+                  {tokenName} ({tokenSymbol})
+                </span>
+              </a>
+            </>
+          </div>
+        )}
+        {(isNotZeroAddress(vendor)) && (
+          <span>
+            Vendor:
+            <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${vendor}`}>{vendor}</a>
+          </span>
+        )}
         {"Rating: " + rating ? rating : ""}
       </div>
 
@@ -252,38 +263,38 @@ function Main() {
 
       </div>
  */}
-{/* Move to a dedicated component */}
+      {/* Move to a dedicated component */}
       {contract != null && accounts[0] != null && (
         <div>
 
-          <input type="text" ref={cIndexRef} placeholder="coupon index"/>
-          <input type="text" ref={rateRef} placeholder="rate %"/>
-          
+          <input type="text" ref={cIndexRef} placeholder="coupon index" />
+          <input type="text" ref={rateRef} placeholder="rate %" />
+
 
           <button onClick={async () => {
             try {
-              if(cIndexRef.current && rateRef.current){
-                const couponIndex = parseInt(cIndexRef.current.value, 10); 
-                if(couponIndex >= coupons.length){
+              if (cIndexRef.current && rateRef.current) {
+                const couponIndex = parseInt(cIndexRef.current.value, 10);
+                if (couponIndex >= coupons.length) {
                   throw new Error("Coupon index out of bounds");
                 }
 
                 const rateValue = Number(rateRef.current.value);
-                const rate = BigInt(rateValue* 10 ** 16);
-                const result = await contract.methods.updateCouponRate(couponIndex,rate)
+                const rate = BigInt(rateValue * 10 ** 16);
+                const result = await contract.methods.updateCouponRate(couponIndex, rate)
                   .send({
                     from: accounts[0], /* Get the account of fmk admin for deployed , another option will be to use a account as current or detect changes on the wallet*/
                     gas: 500000
                   })
-                  .on('confirmation',async function(confirmationNumber:any, receipt:any){
+                  .on('confirmation', async function (confirmationNumber: any, receipt: any) {
                     console.log(`confirmed`);
                     console.log(confirmationNumber);
                     console.log(receipt);
                     await updateCoupon(couponIndex);
-                  
-                })
+
+                  })
                 console.log(result);
-                
+
               }
             } catch (err) {
               console.log(err);

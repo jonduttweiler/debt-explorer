@@ -1,12 +1,21 @@
 import './App.css';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Main from './components/main';
 
-function App() {
+const App = () => {
   return (
     <div className="App App-header">
-      <Main />
+      <Router>
+        <Routes>
+          <Route exact path="/" element={<Main />} />
+          <Route path="/debt/:address?" element={<Main />} />
+        </Routes>
+      </Router>
     </div>
   );
-}
+};
 
 export default App;
+
+
+

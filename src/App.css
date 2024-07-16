@@ -69,7 +69,7 @@ th, td {
   border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-  width: 300px; /* Adjust width as needed */
+  width: 358px; /* Adjust width as needed */
 }
 
 .eth-address-input:focus {
