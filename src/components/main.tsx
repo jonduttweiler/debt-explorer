@@ -26,10 +26,17 @@ const shortenAddress = (address: string) => {
 function Main() {
   const providers = useSyncProviders();
   const { address } = useParams();
-  const [debtAddress, setDebtAddress] = useState<string>(address  || "0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d");
+  //0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d
+  //0x2b3a9258145d736d93dd2e501e11fa24c7a87ee0
+  //0x4c2f335fc5289be901e358755f029a655b984e25 //new abi
+
+  //0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07//new abi
+  const [debtAddress, setDebtAddress] = useState<string>(address || "0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07");
 
   const [loading, setLoading] = useState<boolean>(false);
   const [coupons, setCoupons] = useState<any[]>([]);
+
+  const [annualMinRate, setAnnualMinRate] = useState<string>("");
   const [tokenName, setTokenName] = useState<string>("");
   const [tokenSymbol, setTokenSymbol] = useState<string>("");
   const [vendor, setVendor] = useState<string>("");
@@ -40,7 +47,7 @@ function Main() {
 
   const cIndexRef = useRef<HTMLInputElement>(null);
   const rateRef = useRef<HTMLInputElement>(null);
-// eslint-disable-next-line
+  // eslint-disable-next-line
   const [_web3, setWeb3] = useState<any>(null); // State variable to hold web3 instance
   const [contract, setContract] = useState<any>(null); // State variable to hold contract instance
 
@@ -131,6 +138,28 @@ function Main() {
     setTokenSymbol(await contract.methods.symbol().call());
     setVendor(await contract.methods.vendor().call());
     setRating(await contract.methods.rating().call());
+
+    let minRate : bigint = await contract.methods.annualMinRate().call();
+    let etherValue = Web3.utils.fromWei(minRate.toString(), 'ether');
+    
+    setAnnualMinRate(`${Number(etherValue) *100} % `)
+
+    
+
+
+    /* try { */
+      /*     
+      console.log(await contract.methods.annualMinRate().call());
+
+    } catch (err) {
+      console.log(err);
+    }
+
+        console.log(minRate) */
+    //let etherValue = Web3.utils.fromWei(minRate, 'ether');
+    //setAnnualMinRate(`${etherValue} %`); //I need to show this value as ether with two decimals
+
+
 
     const couponsN = await contract.methods.couponsLength().call();
 
@@ -243,6 +272,14 @@ function Main() {
         )}
         {"Rating: " + rating ? rating : ""}
       </div>
+      {annualMinRate.length >0&& (
+        <div>
+          Annual Min Rate: {annualMinRate}
+        </div>
+      )}
+      
+
+
 
       {/*       <div>
         Check roles
