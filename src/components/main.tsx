@@ -23,24 +23,31 @@ const shortenAddress = (address: string) => {
 }
 
 
+interface Debt {
+  name: string;
+  symbol: string;
+  rating?: string;
+  vendor: string; /* This should be an address */
+  coupons: any[];
+  minRate: string
+}
+
+
+//0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d
+//0x2b3a9258145d736d93dd2e501e11fa24c7a87ee0
+//0x4c2f335fc5289be901e358755f029a655b984e25 //new abi
+//0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07//new abi
+
+
 function Main() {
   const providers = useSyncProviders();
   const { address } = useParams();
-  //0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d
-  //0x2b3a9258145d736d93dd2e501e11fa24c7a87ee0
-  //0x4c2f335fc5289be901e358755f029a655b984e25 //new abi
-
-  //0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07//new abi
+  
   const [debtAddress, setDebtAddress] = useState<string>(address || "0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07");
-
   const [loading, setLoading] = useState<boolean>(false);
-  const [coupons, setCoupons] = useState<any[]>([]);
+  
+  const [debt, setDebt] = useState<Debt>(); 
 
-  const [annualMinRate, setAnnualMinRate] = useState<string>("");
-  const [tokenName, setTokenName] = useState<string>("");
-  const [tokenSymbol, setTokenSymbol] = useState<string>("");
-  const [vendor, setVendor] = useState<string>("");
-  const [rating, setRating] = useState<string>("");
   const [connected, setConnected] = useState<boolean>(false);/* TODO: SYNC WITH STORE */
   const [networkId, setNetworkId] = useState<string>("");
   const [accounts, setAccounts] = useState<string[]>([]);
@@ -119,7 +126,6 @@ function Main() {
     console.log(`Load contract at ${debtAddress}`);
     try {
       setLoading(true);
-      setCoupons([]);
       const web3 = new Web3(providerUrl);
       const contract = new web3.eth.Contract(debtAbi, debtAddress);
       setContract(contract);
@@ -132,61 +138,54 @@ function Main() {
 
 
 
+  /* This function receives a contract as params, and then set some state 
+    getting the min rate, name, symbol, and other
+  */
   async function loadDataFromContract(contract: Contract<AbiItem[]>) {
     console.log(`Load data from contract`)
-    setTokenName(await contract.methods.name().call());
-    setTokenSymbol(await contract.methods.symbol().call());
-    setVendor(await contract.methods.vendor().call());
-    setRating(await contract.methods.rating().call());
-
+    
     let minRate : bigint = await contract.methods.annualMinRate().call();
     let etherValue = Web3.utils.fromWei(minRate.toString(), 'ether');
+    let formattedMinRate = `${Number(etherValue) *100} % `;
     
-    setAnnualMinRate(`${Number(etherValue) *100} % `)
-
     
-
-
-    /* try { */
-      /*     
-      console.log(await contract.methods.annualMinRate().call());
-
-    } catch (err) {
-      console.log(err);
-    }
-
-        console.log(minRate) */
-    //let etherValue = Web3.utils.fromWei(minRate, 'ether');
-    //setAnnualMinRate(`${etherValue} %`); //I need to show this value as ether with two decimals
-
-
-
     const couponsN = await contract.methods.couponsLength().call();
-
+    
     let coupons_ = [];
     for (let i = 0; i < Number(couponsN); i++) {
       const coupon = await contract.methods.coupons(i).call();
       coupons_.push(coupon);
     }
-    setCoupons(coupons_);
+
+    
+
     setLoading(false);
 
+
+    setDebt({
+      name: await contract.methods.name().call(),
+      symbol: await contract.methods.symbol().call(),
+      vendor: await contract.methods.vendor().call(),
+      rating: await contract.methods.rating().call(),
+      minRate: formattedMinRate,
+      coupons: coupons_
+    });
   }
 
 
   async function updateCoupon(couponIndex: number) {
     const updated = await contract.methods.coupons(couponIndex).call();
 
-    console.log(updated);
-
-    setCoupons(coupons => {
-      coupons[couponIndex] = updated;
-      console.log(coupons);
-      return coupons;
+    setDebt((prevDebt) => {
+      if (!prevDebt) {
+        return prevDebt; 
+      }
+      return {
+        ...prevDebt,
+        coupons: prevDebt.coupons.map((coupon, index) => index === couponIndex ? updated : coupon)
+      };
     });
-
-
-  }
+  };
 
   useEffect(function () {
     loadContract();
@@ -252,29 +251,30 @@ function Main() {
       </div>
 
       <div>
-        {tokenSymbol && (
+        {debt && debt.name && (
           <div className="m1">
             <>
               Token:
               <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${debtAddress}`}>
                 <span>
-                  {tokenName} ({tokenSymbol})
+                  {debt.name} ({debt.symbol})
                 </span>
               </a>
             </>
           </div>
         )}
-        {(isNotZeroAddress(vendor)) && (
+        {debt && (isNotZeroAddress(debt.vendor)) && (
           <span>
             Vendor:
-            <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${vendor}`}>{vendor}</a>
+            <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${debt.vendor}`}>{debt.vendor}</a>
           </span>
         )}
-        {"Rating: " + rating ? rating : ""}
+
+        {debt && debt.rating && "Rating: " + debt!.rating}
       </div>
-      {annualMinRate.length >0&& (
+      {debt && debt.minRate.length >0 && (
         <div>
-          Annual Min Rate: {annualMinRate}
+          Annual Min Rate: {debt?.minRate}
         </div>
       )}
       
@@ -312,7 +312,7 @@ function Main() {
             try {
               if (cIndexRef.current && rateRef.current) {
                 const couponIndex = parseInt(cIndexRef.current.value, 10);
-                if (couponIndex >= coupons.length) {
+                if (debt?.coupons != null && couponIndex >= debt.coupons.length) {
                   throw new Error("Coupon index out of bounds");
                 }
 
@@ -352,10 +352,10 @@ function Main() {
           <div className="spinner-container">
             <div className="spinner"></div>
           </div>
-        ) : <CouponsTable
-          coupons={coupons}
+        ) : debt? <CouponsTable
+          coupons={debt.coupons}
           paymentToken={paymentToken}
-        />
+        />: <></>
       }
 
     </div>
