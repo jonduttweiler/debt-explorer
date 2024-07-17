@@ -1,6 +1,7 @@
 import './App.css';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Main from './components/main';
+import { Toaster } from 'react-hot-toast';
 
 const App = () => {
   return (
@@ -11,6 +12,7 @@ const App = () => {
           <Route path="/debt/:address?" element={<Main />} />
         </Routes>
       </Router>
+      <Toaster/>
     </div>
   );
 };

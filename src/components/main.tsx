@@ -1,18 +1,54 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from 'react-router-dom';
 import debtAbi from "../contracts/debt.abi.json";
-import Web3, { AbiItem, Contract, TransactionRevertedWithoutReasonError } from "web3";
+//import Web3, { AbiItem, Contract, TransactionRevertedWithoutReasonError } from "web3";
 import CouponsTable from "./CouponsTable";
-import { useSyncProviders } from "../hooks/useSyncProviders";
-const paymentToken = "USD";
+import { createWeb3Modal, defaultConfig, useDisconnect, useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers/react'
+import { useWeb3Modal } from '@web3modal/ethers/react'
+import { BrowserProvider, Contract, formatEther, JsonRpcProvider, JsonRpcSigner, keccak256, toUtf8Bytes } from "ethers";
+import toast, { Toaster } from 'react-hot-toast';
 
-const providerUrl = "https://alfajores-forno.celo-testnet.org";
-const explorerUrl = "https://alfajores.celoscan.io";
-const celoAlfajoresChainId = '0xaef3'; // Hexadecimal value of 44787
+
+const paymentToken = "USD";
+const projectId = "7cc5f0113eb20ca7c4c7cbf31acfc131";
+
+const alfajores = {
+  chainId: 44787,
+  name: 'Celo Alfajores Testnet',
+  currency: 'CELO',
+  explorerUrl: 'https://alfajores.celoscan.io',
+  rpcUrl: 'https://alfajores-forno.celo-testnet.org'
+}
+
+const metadata = {
+  name: 'Forestmaker Debt explorer',
+  description: 'Forestmaker Debt explorer',
+  url: 'http://localhost:3000/', //'https://forestmaker-debt-explorer.netlify.app', //but could be localhost too
+  icons: ['https://web.forestmaker.org/assets/images/favicon.png']
+}
+
+// 4. Create Ethers config
+const ethersConfig = defaultConfig({
+  metadata
+})
+
+
+createWeb3Modal({
+  ethersConfig,
+  chains: [alfajores],
+  projectId,
+  enableAnalytics: true // Optional - defaults to your Cloud configuration
+})
+
+const VALIDATOR_ROLE = keccak256(toUtf8Bytes("VALIDATOR_ROLE"));
+const BOND_ADMIN_ROLE = keccak256(toUtf8Bytes("BOND_ADMIN_ROLE"));
+const BOND_DEPOSIT_ROLE = keccak256(toUtf8Bytes("BOND_DEPOSIT_ROLE"));
+
 
 const isNotZeroAddress = (address: string) => {
   const zeroAddress = "0x0000000000000000000000000000000000000000";
-  return Web3.utils.isAddress(address) && address.toLowerCase() !== zeroAddress.toLowerCase();
+  //return Web3.utils.isAddress(address) && address.toLowerCase() !== zeroAddress.toLowerCase();
+  return true;
 }
 
 const shortenAddress = (address: string) => {
@@ -40,202 +76,153 @@ interface Debt {
 
 
 function Main() {
-  const providers = useSyncProviders();
-  const { address } = useParams();
-  
-  const [debtAddress, setDebtAddress] = useState<string>(address || "0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07");
+  const { address: debtAddressParam } = useParams();
+  const { open } = useWeb3Modal();
+  const { disconnect } = useDisconnect();
+  const { address, chainId, isConnected } = useWeb3ModalAccount();
+  const { walletProvider } = useWeb3ModalProvider();
+  const [signer, setSigner] = useState<JsonRpcSigner | null>();
+  const [debtAddress, setDebtAddress] = useState<string>(debtAddressParam || "0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07");
   const [loading, setLoading] = useState<boolean>(false);
-  
-  const [debt, setDebt] = useState<Debt>(); 
+  const [debt, setDebt] = useState<Debt>();
+  const [debtContract, setDebtContract] = useState<Contract>();
+  const [roles, setRoles] = useState<string[]>([]); /* Should be a set */
 
-  const [connected, setConnected] = useState<boolean>(false);/* TODO: SYNC WITH STORE */
-  const [networkId, setNetworkId] = useState<string>("");
-  const [accounts, setAccounts] = useState<string[]>([]);
+
 
   const cIndexRef = useRef<HTMLInputElement>(null);
   const rateRef = useRef<HTMLInputElement>(null);
-  // eslint-disable-next-line
-  const [_web3, setWeb3] = useState<any>(null); // State variable to hold web3 instance
-  const [contract, setContract] = useState<any>(null); // State variable to hold contract instance
+
+  useEffect(() => {
+    if (isConnected) {
+      loadDataFromContractWithSigner();
+    } else {
+      loadDataFromContractWithProvider();
 
 
-  const switchToCeloAlfajores = async (provider: any) => {
-    try {
-      await provider.request({
-        method: 'wallet_addEthereumChain',
-        params: [{
-          chainId: '0xaef3', // Hexadecimal value of 44787
-          chainName: 'Celo Alfajores Testnet',
-          nativeCurrency: {
-            name: 'CELO',
-            symbol: 'CELO',
-            decimals: 18
-          },
-          rpcUrls: ['https://alfajores-forno.celo-testnet.org'],
-          blockExplorerUrls: ['https://alfajores.celoscan.io']
-        }]
-      });
-    } catch (error) {
-      console.error('Failed to switch to the network:', error);
     }
+  }, [isConnected])
+
+
+  async function loadDataFromContractWithProvider() {
+    let provider = new JsonRpcProvider(alfajores.rpcUrl);
+    const debtContract = new Contract(debtAddress, debtAbi, provider);
+    setSigner(null);
+    loadDataFromContract(debtContract);
+    setDebtContract(debtContract);
   }
 
+  async function loadDataFromContractWithSigner() {
+    const ethersProvider = new BrowserProvider(walletProvider!);
+    const signer = await ethersProvider.getSigner();
+    setSigner(signer);
+    const debtContract = new Contract(debtAddress, debtAbi, signer);
+    loadDataFromContract(debtContract);
+    setDebtContract(debtContract);
 
-  const handleConnect = async (providerWithInfo: EIP6963ProviderDetail) => {
+    let roles: string[] = [];
+
+    if (await debtContract.hasRole(BOND_ADMIN_ROLE, signer.address)) {
+      roles.push("BOND ADMIN ROLE");
+    }
+    if (await debtContract.hasRole(VALIDATOR_ROLE, signer.address)) {
+      roles.push("VALIDATOR ROLE");
+    }
+    if (await debtContract.hasRole(BOND_DEPOSIT_ROLE, signer.address)) {
+      roles.push("BOND DEPOSIT ROLE");
+    }
+
+
+    setRoles(roles);
+
+
+  }
+
+  /* TODO: CHECK ROLES TOO */
+  async function loadDataFromContract(contract: Contract) {
+    setLoading(true);
     try {
-      const accounts = await providerWithInfo.provider.request({
-        method: "eth_requestAccounts"
-      }) as string[];
-      setAccounts(accounts);
-
-      const networkId = await providerWithInfo.provider.request({
-        method: "eth_chainId"
-      }) as string;
-
-      console.log(`Network id: ${networkId}`)
-      setNetworkId(networkId);
-
-      if (networkId !== celoAlfajoresChainId) {
-        await switchToCeloAlfajores(providerWithInfo.provider);
+      const couponsN = await contract.couponsLength();
+      const ethValue = formatEther(await contract.annualMinRate());
+      let coupons_ = [];
+      for (let i = 0; i < Number(couponsN); i++) {
+        const coupon = await contract.coupons(i);
+        coupons_.push(coupon);
       }
-      console.log(`Update web3 and contract`);
-      const web3 = new Web3(providerWithInfo.provider);
-      setWeb3(web3);
-      setContract(new web3.eth.Contract(debtAbi, debtAddress));
-      setConnected(true);
-
-
-
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  const disconnectWallet = async () => {
-    setConnected(false);
-    setAccounts([]);
-    //ASK DISCONNECTION
-  }
-
-
-  const loadContract = useCallback(async () => {
-    if (!debtAddress || debtAddress.length !== 42) {
-      return; // Exit early if debtAddress is not valid
-    }
-
-    console.log(`Load contract at ${debtAddress}`);
-    try {
-      setLoading(true);
-      const web3 = new Web3(providerUrl);
-      const contract = new web3.eth.Contract(debtAbi, debtAddress);
-      setContract(contract);
-
-    } catch (error) {
-      console.error('Error loading contract:', error);
       setLoading(false);
+      setDebt({
+        name: await contract.name(),
+        symbol: await contract.symbol(),
+        vendor: await contract.vendor(),
+        rating: await contract.rating(),
+        minRate: `${Number(ethValue) * 100} %`,
+        coupons: coupons_
+      });
+
+    } catch (err) {
+      console.log(err);
     }
-  }, [debtAddress]);
-
-
-
-  /* This function receives a contract as params, and then set some state 
-    getting the min rate, name, symbol, and other
-  */
-  async function loadDataFromContract(contract: Contract<AbiItem[]>) {
-    console.log(`Load data from contract`)
-    
-    let minRate : bigint = await contract.methods.annualMinRate().call();
-    let etherValue = Web3.utils.fromWei(minRate.toString(), 'ether');
-    let formattedMinRate = `${Number(etherValue) *100} % `;
-    
-    
-    const couponsN = await contract.methods.couponsLength().call();
-    
-    let coupons_ = [];
-    for (let i = 0; i < Number(couponsN); i++) {
-      const coupon = await contract.methods.coupons(i).call();
-      coupons_.push(coupon);
-    }
-
-    
-
     setLoading(false);
-
-
-    setDebt({
-      name: await contract.methods.name().call(),
-      symbol: await contract.methods.symbol().call(),
-      vendor: await contract.methods.vendor().call(),
-      rating: await contract.methods.rating().call(),
-      minRate: formattedMinRate,
-      coupons: coupons_
-    });
   }
 
+  async function sendTransaction() {
+    if (!debtContract) return;
+    if (cIndexRef.current && rateRef.current) { 
 
-  async function updateCoupon(couponIndex: number) {
-    const updated = await contract.methods.coupons(couponIndex).call();
-
-    setDebt((prevDebt) => {
-      if (!prevDebt) {
-        return prevDebt; 
+      const couponIndex = parseInt(cIndexRef.current.value, 10);
+      if (isNaN(couponIndex) || couponIndex < 0) {
+        toast.error("Coupon index must be a positive integer"); 
+        return;
       }
-      return {
-        ...prevDebt,
-        coupons: prevDebt.coupons.map((coupon, index) => index === couponIndex ? updated : coupon)
-      };
-    });
-  };
+  
+      const rateValue = parseFloat(rateRef.current.value);
+      if (isNaN(rateValue) || rateValue <= 0) {
+        toast.error("Rate must be a positive number");  
+        return;
+      }
 
-  useEffect(function () {
-    loadContract();
-  }, [loadContract]);
+      const rate = BigInt(rateValue * 10 ** 16);
+      let toastId;
+
+      
+      try{
+        toastId = toast.loading(`Sending Tx to update coupon [${couponIndex}]. Rate: ${Number(formatEther(rate))*100} %. Please approve it on your wallet`);
+
+        const result = await debtContract.updateCouponRate(couponIndex, rate);
+        if(result.hash){
+          toast.success(`Transaction sent: ${result.hash}`, {  //TODO: WAIT FOR CONFIRMATION
+            id: toastId,
+          });
+
+        }
 
 
-  useEffect(function () {
-    if (contract) {
-      loadDataFromContract(contract);
+
+      } catch(err){
+        console.log(err);
+      }
     }
-  }, [contract]);
-
-
-
+  }
 
   return (
     <div>
       <div className="top-right">
-        {connected ? (
-          <div className="connected-address">
-            <div>
-              Network: {networkId === celoAlfajoresChainId ? 'Celo Alfajores Testnet' : 'Unknown'}
-            </div>
-            <div className="rw-sb">
-              <div className="address-text">{shortenAddress(accounts[0])}</div>
-              <button className="disconnect-wallet-button" onClick={disconnectWallet}>Disconnect</button>
+        {!isConnected ? (
+          <button onClick={() => open()} className="connect-wallet-button">Connect wallet</button>
+        ) : (
+          <div className="current-account">
+            <div>{shortenAddress(address!)} </div>
 
+            <div className="roles-container">
+              {roles.map(role => (
+                <div key={role}>{role}</div>
+              ))}
+            </div>
+            <div>
+              <button onClick={() => disconnect()} className="disconnect-wallet-button">Disconnect</button>
             </div>
           </div>
-        ) : (
-          providers.length > 1 ? (
-            <div className="dropdown">
-              <button className="connect-wallet-button">Connect wallet</button>
-              <div className="dropdown-content">
-                {providers.map((provider: EIP6963ProviderDetail) => (
-                  <button key={provider.info.uuid} onClick={() => handleConnect(provider)}>
-                    Connect with {provider.info.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : providers.length === 1 ? (
-            <button className="connect-wallet-button" onClick={() => handleConnect(providers[0])}>
-              Connect with {providers[0].info.name}
-            </button>
-          ) : <></>
-
         )}
-
-
       </div>
       <div>
         Network: Celo Alfajores
@@ -255,7 +242,7 @@ function Main() {
           <div className="m1">
             <>
               Token:
-              <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${debtAddress}`}>
+              <a className="link" rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/address/${debtAddress}`}>
                 <span>
                   {debt.name} ({debt.symbol})
                 </span>
@@ -266,84 +253,24 @@ function Main() {
         {debt && (isNotZeroAddress(debt.vendor)) && (
           <span>
             Vendor:
-            <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${debt.vendor}`}>{debt.vendor}</a>
+            <a className="link" rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/address/${debt.vendor}`}>{debt.vendor}</a>
           </span>
         )}
 
         {debt && debt.rating && "Rating: " + debt!.rating}
       </div>
-      {debt && debt.minRate.length >0 && (
+      {debt && debt.minRate.length > 0 && (
         <div>
           Annual Min Rate: {debt?.minRate}
         </div>
       )}
-      
 
 
-
-      {/*       <div>
-        Check roles
-        <button onClick={async () => {
-          try {
-            if (contract) {
-              console.log(`Checking role BOND_ADMIN_ROLE for ${accounts[0]}`)
-              const result = await contract.methods.hasRole(web3.utils.soliditySha3("BOND_ADMIN_ROLE"), accounts[0]).call(); //false
-              console.log(result)
-            }
-
-          } catch (err) {
-            console.log(err);
-          }
-        }
-
-        }>Check role</button>
-
-      </div>
- */}
-      {/* Move to a dedicated component */}
-      {contract != null && accounts[0] != null && (
-        <div>
-
-          <input type="text" ref={cIndexRef} placeholder="coupon index" />
-          <input type="text" ref={rateRef} placeholder="rate %" />
-
-
-          <button onClick={async () => {
-            try {
-              if (cIndexRef.current && rateRef.current) {
-                const couponIndex = parseInt(cIndexRef.current.value, 10);
-                if (debt?.coupons != null && couponIndex >= debt.coupons.length) {
-                  throw new Error("Coupon index out of bounds");
-                }
-
-                const rateValue = Number(rateRef.current.value);
-                const rate = BigInt(rateValue * 10 ** 16);
-                const result = await contract.methods.updateCouponRate(couponIndex, rate)
-                  .send({
-                    from: accounts[0], /* Get the account of fmk admin for deployed , another option will be to use a account as current or detect changes on the wallet*/
-                    gas: 500000
-                  })
-                  .on('confirmation', async function (confirmationNumber: any, receipt: any) {
-                    console.log(`confirmed`);
-                    console.log(confirmationNumber);
-                    console.log(receipt);
-                    await updateCoupon(couponIndex);
-
-                  })
-                console.log(result);
-
-              }
-            } catch (err) {
-              console.log(err);
-              if (err instanceof TransactionRevertedWithoutReasonError) {
-                console.log(err);
-
-              }
-
-
-            }
-
-          }}>Send demo transaction (updateCouponRate)</button>
+      {signer != null && (
+        <div className="row m1">
+          <input type="text" className="sm-input" ref={cIndexRef} placeholder="Index" />
+          <input type="text" className="sm-input" ref={rateRef} placeholder="rate %" />
+          <button onClick={sendTransaction}>Send Transaction</button>
         </div>
       )}
 
@@ -352,10 +279,10 @@ function Main() {
           <div className="spinner-container">
             <div className="spinner"></div>
           </div>
-        ) : debt? <CouponsTable
+        ) : debt ? <CouponsTable
           coupons={debt.coupons}
           paymentToken={paymentToken}
-        />: <></>
+        /> : <></>
       }
 
     </div>

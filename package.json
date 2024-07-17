@@ -10,15 +10,18 @@
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
+    "@web3modal/ethers": "^5.0.6",
+    "@web3modal/ui": "^5.0.6",
+    "@web3modal/wallet": "^5.0.6",
+    "ethers": "^6.13.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.4.1",
     "react-router-dom": "^6.24.1",
     "react-scripts": "5.0.1",
     "typescript": "^5.5.3",
-    "web-vitals": "^2.1.4",
-    "web3": "^4.10.0"
+    "web-vitals": "^2.1.4"
   },
-
   "overrides": {
     "typescript": "^5.5.3"
   },

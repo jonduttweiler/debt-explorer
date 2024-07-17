@@ -1,6 +1,7 @@
-.App{
+.App {
   padding: 8px;
 }
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
@@ -23,6 +24,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -34,14 +36,18 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
-  padding: 10px 15px; /* 10px vertical padding, 15px horizontal padding */
-  text-align: left; /* Align text to the left */
-  border: 1px solid #ddd; /* Add a light border to cells */
+th,
+td {
+  padding: 10px 15px;
+  /* 10px vertical padding, 15px horizontal padding */
+  text-align: left;
+  /* Align text to the left */
+  border: 1px solid #ddd;
+  /* Add a light border to cells */
 }
 
 
-.table-coupons{
+.table-coupons {
   margin-top: 20px;
 }
 
@@ -59,8 +65,8 @@ th, td {
   color: #61dafb;
 }
 
-.m1{
-  margin:10px;
+.m1 {
+  margin: 10px;
 }
 
 .eth-address-input {
@@ -69,13 +75,16 @@ th, td {
   border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
-  width: 358px; /* Adjust width as needed */
+  width: 358px;
+  /* Adjust width as needed */
 }
 
 .eth-address-input:focus {
   outline: none;
-  border-color: #61dafb; /* Change border color on focus */
-  box-shadow: 0 0 5px rgba(97, 218, 251, 0.5); /* Add a lighter box-shadow on focus */
+  border-color: #61dafb;
+  /* Change border color on focus */
+  box-shadow: 0 0 5px rgba(97, 218, 251, 0.5);
+  /* Add a lighter box-shadow on focus */
 }
 
 
@@ -83,35 +92,50 @@ th, td {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100px; /* Adjust height as needed */
+  height: 100px;
+  /* Adjust height as needed */
 }
 
 .spinner {
-  border: 3px solid rgba(97, 218, 251, 0.2); /* Light border color */
-  border-top: 3px solid #61dafb; /* Match the link color */
+  border: 3px solid rgba(97, 218, 251, 0.2);
+  /* Light border color */
+  border-top: 3px solid #61dafb;
+  /* Match the link color */
   border-radius: 50%;
   width: 30px;
   height: 30px;
-  animation: spin 1s linear infinite; /* Animation to rotate spinner */
+  animation: spin 1s linear infinite;
+  /* Animation to rotate spinner */
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 
-td, th {
+td,
+th {
   font-size: 0.8em;
 }
 
 /* Example theme colors */
 :root {
-  --primary-color: #4CAF50; /* Primary color for the button */
-  --secondary-color: #ffffff; /* Secondary color for the text */
-  --hover-color: #45a049; /* Hover color */
-  --border-radius: 5px; /* Border radius */
-  --font-family: 'Arial', sans-serif; /* Font family */
+  --primary-color: #4CAF50;
+  /* Primary color for the button */
+  --secondary-color: #ffffff;
+  /* Secondary color for the text */
+  --hover-color: #45a049;
+  /* Hover color */
+  --border-radius: 5px;
+  /* Border radius */
+  --font-family: 'Arial', sans-serif;
+  /* Font family */
 }
 
 .connect-wallet-button {
@@ -140,7 +164,7 @@ td, th {
 }
 
 
-.top-right{
+.top-right {
   position: absolute;
   right: 10px;
 }
@@ -160,9 +184,10 @@ td, th {
 
 
 .disconnect-wallet-button {
-  margin-left: 10px;
+  margin-top: 4px;
   padding: 5px 10px;
-  background-color: #f44336; /* Red */
+  background-color: #f44336;
+  /* Red */
   color: white;
   border: none;
   border-radius: 5px;
@@ -170,24 +195,147 @@ td, th {
 }
 
 .disconnect-wallet-button:hover {
-  background-color: #d32f2f; /* Darker red */
+  background-color: #d32f2f;
+  /* Darker red */
 }
 
-.rw-sb{
+.rw-sb {
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
 }
-.address-text{
+
+.address-text {
   display: inline-flex;
-  padding: 0px 6px ;
+  padding: 0px 6px;
   border-radius: 6px;
-  background-color: rgba(240, 240, 240, 0.9); 
+  background-color: rgba(240, 240, 240, 0.9);
   transition: background-color 0.3s ease;
 }
 
 
 .address-text:hover {
   background-color: rgba(200, 200, 200, 0.9);
+}
+
+.current-account {
+  background-color: rgba(200, 200, 200, 0.9);
+  color: #333333;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.row .sm-input {
+  width: 60px;
+  margin-right: 5px;
+}
+
+/* Base styles */
+input,
+textarea,
+select,
+button {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+input[type="date"],
+input[type="datetime-local"],
+input[type="month"],
+input[type="search"],
+input[type="tel"],
+input[type="time"],
+input[type="url"],
+input[type="week"],
+input[type="file"],
+textarea,
+select {
+  display: block;
+  width: 100%;
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #495057;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+/* Focus state */
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+input[type="datetime-local"]:focus,
+input[type="month"]:focus,
+input[type="search"]:focus,
+input[type="tel"]:focus,
+input[type="time"]:focus,
+input[type="url"]:focus,
+input[type="week"]:focus,
+input[type="file"]:focus,
+textarea:focus,
+select:focus {
+  color: #495057;
+  background-color: #fff;
+  border-color: #80bdff;
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Disabled state */
+input[type="text"]:disabled,
+input[type="password"]:disabled,
+input[type="email"]:disabled,
+input[type="number"]:disabled,
+input[type="date"]:disabled,
+input[type="datetime-local"]:disabled,
+input[type="month"]:disabled,
+input[type="search"]:disabled,
+input[type="tel"]:disabled,
+input[type="time"]:disabled,
+input[type="url"]:disabled,
+input[type="week"]:disabled,
+input[type="file"]:disabled,
+textarea:disabled,
+select:disabled {
+  background-color: #e9ecef;
+  opacity: 1;
+}
+
+/* Placeholder */
+input[type="text"]::placeholder,
+input[type="password"]::placeholder,
+input[type="email"]::placeholder,
+input[type="number"]::placeholder,
+input[type="date"]::placeholder,
+input[type="datetime-local"]::placeholder,
+input[type="month"]::placeholder,
+input[type="search"]::placeholder,
+input[type="tel"]::placeholder,
+input[type="time"]::placeholder,
+input[type="url"]::placeholder,
+input[type="week"]::placeholder,
+input[type="file"]::placeholder,
+textarea::placeholder {
+  color: #6c757d;
+  opacity: 1;
 }

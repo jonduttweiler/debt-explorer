@@ -1,4 +1,4 @@
-import Web3 from "web3";
+import { formatEther } from "ethers";
 
 const formatDateStr = (date: Date) => {
   const day = String(date.getDate()).padStart(2, '0');
@@ -57,8 +57,8 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ coupons, paymentToken}) => 
                 <td>{formatDate(coupon.start_date)}</td>
                 <td>{formatDate(coupon.cutoff_date)}</td>
                 <td>{formatDate(coupon.payment_date)}</td>
-                <td>{Web3.utils.fromWei(coupon.annual_interest_rate * 100n, 18)}%</td>
-                <td>{Web3.utils.fromWei(coupon.par_value.toString(), 18)}</td>
+                <td>{formatEther(coupon.annual_interest_rate * 100n)}%</td>
+                <td>{formatEther(coupon.par_value.toString())}</td>
                 <td>{formatStatus(coupon.status)}</td>
               </tr>
             )
