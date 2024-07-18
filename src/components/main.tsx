@@ -242,6 +242,9 @@ function Main() {
               ))}
             </div>
             <div>
+              {roles.length == 0 && `No roles detected`}
+            </div>
+            <div>
               <button onClick={() => disconnect()} className="disconnect-wallet-button">Disconnect</button>
             </div>
           </div>
