@@ -76,7 +76,6 @@ td {
   border-radius: 4px;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
   width: 358px;
-  /* Adjust width as needed */
 }
 
 .eth-address-input:focus {
@@ -338,4 +337,28 @@ input[type="file"]::placeholder,
 textarea::placeholder {
   color: #6c757d;
   opacity: 1;
+}
+
+
+.eth-address-input-container{
+  width: 400px;
+}
+
+.send-transaction-button {
+  padding: 5px 10px;
+  background-color: #2196F3; /* Light blue color */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for hover and glow effect */
+  box-shadow: 0 0 5px rgba(33, 150, 243, 0.5); /* Initial subtle glow */
+  font-size: 16px;
+  font-family: 'Roboto';
+  font-weight: 500;
+}
+
+.send-transaction-button:hover {
+  background-color: #1e88e5; /* Darker blue for hover effect */
+  box-shadow: 0 0 15px rgba(33, 150, 243, 0.75); /* Enhanced glow effect on hover */
 }

@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from 'react-router-dom';
 import debtAbi from "../contracts/debt.abi.json";
 //import Web3, { AbiItem, Contract, TransactionRevertedWithoutReasonError } from "web3";
 import CouponsTable from "./CouponsTable";
 import { createWeb3Modal, defaultConfig, useDisconnect, useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers/react'
 import { useWeb3Modal } from '@web3modal/ethers/react'
-import { BrowserProvider, Contract, formatEther, JsonRpcProvider, JsonRpcSigner, keccak256, toUtf8Bytes } from "ethers";
-import toast, { Toaster } from 'react-hot-toast';
+import { BrowserProvider, Contract, formatEther, isAddress, isError, JsonRpcProvider, JsonRpcSigner, keccak256, makeError, toUtf8Bytes, TransactionResponse, ZeroAddress } from "ethers";
+import toast, { CheckmarkIcon, ErrorIcon, LoaderIcon } from 'react-hot-toast';
 
 
 const paymentToken = "USD";
@@ -46,9 +46,7 @@ const BOND_DEPOSIT_ROLE = keccak256(toUtf8Bytes("BOND_DEPOSIT_ROLE"));
 
 
 const isNotZeroAddress = (address: string) => {
-  const zeroAddress = "0x0000000000000000000000000000000000000000";
-  //return Web3.utils.isAddress(address) && address.toLowerCase() !== zeroAddress.toLowerCase();
-  return true;
+  return isAddress(address) && address.toLowerCase() !== ZeroAddress;
 }
 
 const shortenAddress = (address: string) => {
@@ -165,41 +163,122 @@ function Main() {
     setLoading(false);
   }
 
+  async function updateCoupon(index: number) {
+    if (!debtContract || !debt) return;
+
+    const updated = await debtContract.coupons(index);
+
+    setDebt(debt => ({
+      ...debt!,
+      coupons: debt!.coupons.map((coupon, index_) => index_ === index ? updated : coupon)
+    }))
+
+  }
+
+
+
   async function sendTransaction() {
+
     if (!debtContract) return;
-    if (cIndexRef.current && rateRef.current) { 
+    if (cIndexRef.current && rateRef.current) {
 
       const couponIndex = parseInt(cIndexRef.current.value, 10);
-      if (isNaN(couponIndex) || couponIndex < 0) {
-        toast.error("Coupon index must be a positive integer"); 
+      if (isNaN(couponIndex) || couponIndex < 1) {
+        toast.error("Invalid coupon index. Please enter a valid positive integer greater than 0.");
         return;
       }
-  
+
       const rateValue = parseFloat(rateRef.current.value);
       if (isNaN(rateValue) || rateValue <= 0) {
-        toast.error("Rate must be a positive number");  
+        toast.error("Rate must be a positive number");
         return;
       }
 
       const rate = BigInt(rateValue * 10 ** 16);
       let toastId;
 
-      
-      try{
-        toastId = toast.loading(`Sending Tx to update coupon [${couponIndex}]. Rate: ${Number(formatEther(rate))*100} %. Please approve it on your wallet`);
 
-        const result = await debtContract.updateCouponRate(couponIndex, rate);
-        if(result.hash){
-          toast.success(`Transaction sent: ${result.hash}`, {  //TODO: WAIT FOR CONFIRMATION
-            id: toastId,
-          });
+      try {
+        toastId = toast.loading(`Sending transaction to update coupon #${couponIndex} with a rate of ${(Number(formatEther(rate)) * 100).toFixed(2)}%. Please approve the transaction in your wallet.`);
+
+
+        const result: TransactionResponse = await debtContract.updateCouponRate(couponIndex - 1, rate);
+
+        let txHash = result.hash;
+
+        if (result.hash) {
+          toast(
+            (t) => (
+              <div>
+                <div>Transaction sent: </div>
+                <a rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/tx/${txHash}`}>
+                  {shortenAddress(txHash)}
+                </a>.
+                <div>Waiting for confirmations...</div>
+              </div>
+            ),
+            {
+              icon: <LoaderIcon />,
+              duration: 100000,
+              id: toastId,
+            }
+          );
+
 
         }
 
+        let confirmation = await result.wait(3);
+        if (confirmation != null) {
+          toast.success(`Transaction confirmed: ${result.hash}`, {
+            id: toastId,
+            duration: 2000,
+          });
+
+          toast(
+            (t) => (
+              <div>
+                <div>Transaction confirmed: </div>
+                <a rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/tx/${txHash}`}>
+                  {shortenAddress(txHash)}
+                </a>.
+              </div>
+            ),
+            {
+              icon: <CheckmarkIcon />,
+              duration: 4000,
+              id: toastId,
+            }
+          );
+        }
+
+        console.log(result.hash)
+
+        /* Update coupon with index */
+
+        updateCoupon(couponIndex - 1);
 
 
-      } catch(err){
-        console.log(err);
+      } catch (err) {
+        let message = "";
+        if (isError(err, "UNKNOWN_ERROR")) {
+          message = err.error?.message || "";
+        }  
+        if (toastId) {
+
+          toast(
+            (t) => (
+              <div>
+                <div>Transaction failed: </div>
+                <div>{message}</div>
+              </div>
+            ),
+            {
+              icon: <ErrorIcon />,
+              duration: 4000,
+              id: toastId,
+            }
+          );
+        }
       }
     }
   }
@@ -228,13 +307,15 @@ function Main() {
         Network: Celo Alfajores
       </div>
       <div className="m1" >
-        <input
-          className="eth-address-input"
-          type="text"
-          placeholder="Debt address"
-          value={debtAddress}
-          onChange={(e) => setDebtAddress(e.target.value)}
-        />
+        <div className="eth-address-input-container">
+          <input
+            className="eth-address-input"
+            type="text"
+            placeholder="Debt address"
+            value={debtAddress}
+            onChange={(e) => setDebtAddress(e.target.value)}
+          />
+        </div>
       </div>
 
       <div>
@@ -253,9 +334,10 @@ function Main() {
         {debt && (isNotZeroAddress(debt.vendor)) && (
           <span>
             Vendor:
-            <a className="link" rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/address/${debt.vendor}`}>{debt.vendor}</a>
+            <a className="link" rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/address/${debt.vendor}`}>{shortenAddress(debt.vendor)}</a>
           </span>
         )}
+
 
         {debt && debt.rating && "Rating: " + debt!.rating}
       </div>
@@ -270,7 +352,7 @@ function Main() {
         <div className="row m1">
           <input type="text" className="sm-input" ref={cIndexRef} placeholder="Index" />
           <input type="text" className="sm-input" ref={rateRef} placeholder="rate %" />
-          <button onClick={sendTransaction}>Send Transaction</button>
+          <button className="send-transaction-button" onClick={sendTransaction}>Send Transaction</button>
         </div>
       )}
 

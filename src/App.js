@@ -12,7 +12,13 @@ const App = () => {
           <Route path="/debt/:address?" element={<Main />} />
         </Routes>
       </Router>
-      <Toaster/>
+      <Toaster
+        toastOptions={{
+          className: '',
+          style: {
+            fontSize: 17
+          },
+        }} />
     </div>
   );
 };
