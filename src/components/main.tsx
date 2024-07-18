@@ -5,14 +5,15 @@ import debtAbi from "../contracts/debt.abi.json";
 import CouponsTable from "./CouponsTable";
 import { createWeb3Modal, defaultConfig, useDisconnect, useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers/react'
 import { useWeb3Modal } from '@web3modal/ethers/react'
-import { BrowserProvider, Contract, formatEther, isAddress, isError, JsonRpcProvider, JsonRpcSigner, keccak256, makeError, toUtf8Bytes, TransactionResponse, ZeroAddress } from "ethers";
-import toast, { CheckmarkIcon, ErrorIcon, LoaderIcon } from 'react-hot-toast';
+import { BrowserProvider, Contract, formatEther, isAddress, JsonRpcProvider, JsonRpcSigner, keccak256, toUtf8Bytes, TransactionResponse, ZeroAddress } from "ethers";
+import toast from 'react-hot-toast';
+import { handleTransactionError, showLoadingToast, showPendingTransactionToast, showTransactionConfirmedToast } from "../toast-utils";
 
 
 const paymentToken = "USD";
 const projectId = "7cc5f0113eb20ca7c4c7cbf31acfc131";
 
-const alfajores = {
+export const alfajores = {
   chainId: 44787,
   name: 'Celo Alfajores Testnet',
   currency: 'CELO',
@@ -49,7 +50,7 @@ const isNotZeroAddress = (address: string) => {
   return isAddress(address) && address.toLowerCase() !== ZeroAddress;
 }
 
-const shortenAddress = (address: string) => {
+export const shortenAddress = (address: string) => {
   if (address.length > 10) {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4, address.length)}`;
   }
@@ -199,56 +200,18 @@ function Main() {
 
 
       try {
-        toastId = toast.loading(`Sending transaction to update coupon #${couponIndex} with a rate of ${(Number(formatEther(rate)) * 100).toFixed(2)}%. Please approve the transaction in your wallet.`);
-
-
+        toastId = showLoadingToast(couponIndex, rate);
         const result: TransactionResponse = await debtContract.updateCouponRate(couponIndex - 1, rate);
 
         let txHash = result.hash;
 
-        if (result.hash) {
-          toast(
-            (t) => (
-              <div>
-                <div>Transaction sent: </div>
-                <a rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/tx/${txHash}`}>
-                  {shortenAddress(txHash)}
-                </a>.
-                <div>Waiting for confirmations...</div>
-              </div>
-            ),
-            {
-              icon: <LoaderIcon />,
-              duration: 100000,
-              id: toastId,
-            }
-          );
-
-
+        if (txHash) {
+          showPendingTransactionToast(txHash, toastId);
         }
 
         let confirmation = await result.wait(3);
         if (confirmation != null) {
-          toast.success(`Transaction confirmed: ${result.hash}`, {
-            id: toastId,
-            duration: 2000,
-          });
-
-          toast(
-            (t) => (
-              <div>
-                <div>Transaction confirmed: </div>
-                <a rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/tx/${txHash}`}>
-                  {shortenAddress(txHash)}
-                </a>.
-              </div>
-            ),
-            {
-              icon: <CheckmarkIcon />,
-              duration: 4000,
-              id: toastId,
-            }
-          );
+          showTransactionConfirmedToast(txHash, toastId);
         }
 
         console.log(result.hash)
@@ -259,26 +222,7 @@ function Main() {
 
 
       } catch (err) {
-        let message = "";
-        if (isError(err, "UNKNOWN_ERROR")) {
-          message = err.error?.message || "";
-        }  
-        if (toastId) {
-
-          toast(
-            (t) => (
-              <div>
-                <div>Transaction failed: </div>
-                <div>{message}</div>
-              </div>
-            ),
-            {
-              icon: <ErrorIcon />,
-              duration: 4000,
-              id: toastId,
-            }
-          );
-        }
+        toastId && handleTransactionError(err, toastId);
       }
     }
   }
