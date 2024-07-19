@@ -82,7 +82,7 @@ function Main() {
   const { address: debtAddressParam } = useParams();
   const { open } = useWeb3Modal();
   const { disconnect } = useDisconnect();
-  const { address, chainId, isConnected } = useWeb3ModalAccount();
+  const { address, isConnected } = useWeb3ModalAccount();
   const { walletProvider } = useWeb3ModalProvider();
   const [signer, setSigner] = useState<JsonRpcSigner | null>();
   const [debtAddress, setDebtAddress] = useState<string>(debtAddressParam || "0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07");
@@ -101,7 +101,6 @@ function Main() {
       loadDataFromContractWithSigner();
     } else {
       loadDataFromContractWithProvider();
-
 
     }
   }, [isConnected,debtAddress])
@@ -122,25 +121,26 @@ function Main() {
     const debtContract = new Contract(debtAddress, debtAbi, signer);
     loadDataFromContract(debtContract);
     setDebtContract(debtContract);
+    loadRolesFromSmartContract(debtContract, signer.address);
+  }
+  
+  async function loadRolesFromSmartContract(debtContract: Contract, who: string){
 
     let roles: string[] = [];
 
-    if (await debtContract.hasRole(BOND_ADMIN_ROLE, signer.address)) {
+    if (await debtContract.hasRole(BOND_ADMIN_ROLE, who)) {
       roles.push("BOND ADMIN ROLE");
     }
-    if (await debtContract.hasRole(VALIDATOR_ROLE, signer.address)) {
+    if (await debtContract.hasRole(VALIDATOR_ROLE, who)) {
       roles.push("VALIDATOR ROLE");
     }
-    if (await debtContract.hasRole(BOND_DEPOSIT_ROLE, signer.address)) {
+    if (await debtContract.hasRole(BOND_DEPOSIT_ROLE, who)) {
       roles.push("BOND DEPOSIT ROLE");
     }
-
-
     setRoles(roles);
-
-
   }
-  
+
+
   function clearDebt(){
     setDebt({
       name: "",
@@ -271,7 +271,7 @@ function Main() {
               ))}
             </div>
             <div>
-              {roles.length == 0 && `No roles detected`}
+              {roles.length === 0 && `No roles detected`}
             </div>
             <div>
               <button onClick={() => disconnect()} className="disconnect-wallet-button">Disconnect</button>
