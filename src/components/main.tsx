@@ -64,7 +64,7 @@ interface Debt {
   rating?: string;
   vendor: string; /* This should be an address */
   coupons: any[];
-  minRate: string
+  minRate?: string
 }
 
 
@@ -72,6 +72,10 @@ interface Debt {
 //0x2b3a9258145d736d93dd2e501e11fa24c7a87ee0
 //0x4c2f335fc5289be901e358755f029a655b984e25 //new abi
 //0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07//new abi
+//0x7e0c4506b47a0bb968892b5f203e13a9dc2b43c4  nominal price 10 usd
+//0xb3cb3436bdde65709dc8cd64fb633a56e45720a9 nominal price 2.5 usd
+//0x2fc30088a8864df21053d614b74dbfb4f2176f40 nominal price 0.5 usd
+
 
 
 function Main() {
@@ -100,7 +104,7 @@ function Main() {
 
 
     }
-  }, [isConnected])
+  }, [isConnected,debtAddress])
 
 
   async function loadDataFromContractWithProvider() {
@@ -136,28 +140,53 @@ function Main() {
 
 
   }
+  
+  function clearDebt(){
+    setDebt({
+      name: "",
+      symbol: "",
+      vendor: "",
+      rating: "",
+      coupons:[],
+    });
+  }
 
-  /* TODO: CHECK ROLES TOO */
   async function loadDataFromContract(contract: Contract) {
+    console.log(`Load data from contract`)
+    clearDebt();
     setLoading(true);
+
     try {
+
       const couponsN = await contract.couponsLength();
       const ethValue = formatEther(await contract.annualMinRate());
-      let coupons_ = [];
-      for (let i = 0; i < Number(couponsN); i++) {
-        const coupon = await contract.coupons(i);
-        coupons_.push(coupon);
-      }
-      setLoading(false);
+
       setDebt({
         name: await contract.name(),
         symbol: await contract.symbol(),
         vendor: await contract.vendor(),
         rating: await contract.rating(),
         minRate: `${Number(ethValue) * 100} %`,
-        coupons: coupons_
+        coupons: []
       });
 
+
+
+      let coupons_ = [];
+      for (let i = 0; i < Number(couponsN); i++) {
+        const coupon = await contract.coupons(i);
+        coupons_.push(coupon);
+      }
+      setDebt({
+        name: await contract.name(),
+        symbol: await contract.symbol(),
+        vendor: await contract.vendor(),
+        rating: await contract.rating(),
+    
+        coupons: coupons_
+      });
+      
+      setLoading(false);
     } catch (err) {
       console.log(err);
     }
@@ -288,7 +317,7 @@ function Main() {
 
         {debt && debt.rating && "Rating: " + debt!.rating}
       </div>
-      {debt && debt.minRate.length > 0 && (
+      {debt && debt.minRate && debt.minRate.length > 0 && (
         <div>
           Annual Min Rate: {debt?.minRate}
         </div>
