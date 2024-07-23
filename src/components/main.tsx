@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams } from 'react-router-dom';
+import tokenAbi from "../contracts/erc20.abi.json";
 import debtAbi from "../contracts/debt.abi.json";
+import vendorAbi from "../contracts/vendor.abi.json";
 //import Web3, { AbiItem, Contract, TransactionRevertedWithoutReasonError } from "web3";
 import CouponsTable from "./CouponsTable";
 import { createWeb3Modal, defaultConfig, useDisconnect, useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers/react'
@@ -8,9 +10,10 @@ import { useWeb3Modal } from '@web3modal/ethers/react'
 import { BrowserProvider, Contract, formatEther, isAddress, JsonRpcProvider, JsonRpcSigner, keccak256, toUtf8Bytes, TransactionResponse, ZeroAddress } from "ethers";
 import toast from 'react-hot-toast';
 import { handleTransactionError, showLoadingToast, showPendingTransactionToast, showTransactionConfirmedToast } from "../toast-utils";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCopy } from "@fortawesome/free-solid-svg-icons";
 
 
-const paymentToken = "USD";
 const projectId = "7cc5f0113eb20ca7c4c7cbf31acfc131";
 
 export const alfajores = {
@@ -27,6 +30,8 @@ const metadata = {
   url: 'http://localhost:3000/', //'https://forestmaker-debt-explorer.netlify.app', //but could be localhost too
   icons: ['https://web.forestmaker.org/assets/images/favicon.png']
 }
+
+const network = alfajores;
 
 // 4. Create Ethers config
 const ethersConfig = defaultConfig({
@@ -75,7 +80,11 @@ interface Debt {
 //0x7e0c4506b47a0bb968892b5f203e13a9dc2b43c4  nominal price 10 usd
 //0xb3cb3436bdde65709dc8cd64fb633a56e45720a9 nominal price 2.5 usd
 //0x2fc30088a8864df21053d614b74dbfb4f2176f40 nominal price 0.5 usd
+//0x9D53937170b5034e0356ff39e0530A667a807abD 1 day coupon length
 
+
+//0x21677d46972ef610e26aec7ce1356517db901c6c 1 day 1 dolar
+//0x67d1879a17c51c15b7c9e5786e553b42cca493e4 1 hour 1 dolar
 
 
 function Main() {
@@ -85,10 +94,14 @@ function Main() {
   const { address, isConnected } = useWeb3ModalAccount();
   const { walletProvider } = useWeb3ModalProvider();
   const [signer, setSigner] = useState<JsonRpcSigner | null>();
-  const [debtAddress, setDebtAddress] = useState<string>(debtAddressParam || "0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07");
+  const [debtAddress, setDebtAddress] = useState<string>(debtAddressParam || "0x67d1879a17c51c15b7c9e5786e553b42cca493e4");
   const [loading, setLoading] = useState<boolean>(false);
   const [debt, setDebt] = useState<Debt>();
+  const [circulatingSupply, setCirculatingSupply] = useState<string>();
   const [debtContract, setDebtContract] = useState<Contract>();
+  const [vendorContract, setVendorContract] = useState<Contract>();
+  const [paymentToken, setPaymentToken] = useState<Contract>();
+  const hasRunOnce = useRef(false);
   const [roles, setRoles] = useState<string[]>([]); /* Should be a set */
 
 
@@ -103,15 +116,19 @@ function Main() {
       loadDataFromContractWithProvider();
 
     }
-  }, [isConnected,debtAddress])
+  }, [isConnected, debtAddress])
 
 
   async function loadDataFromContractWithProvider() {
-    let provider = new JsonRpcProvider(alfajores.rpcUrl);
+    let provider = new JsonRpcProvider(network.rpcUrl);
     const debtContract = new Contract(debtAddress, debtAbi, provider);
     setSigner(null);
     loadDataFromContract(debtContract);
     setDebtContract(debtContract);
+
+    const paymentAddr = await debtContract.paymentToken();
+    const paymentToken = new Contract(paymentAddr, tokenAbi, provider);
+    setPaymentToken(paymentToken);
   }
 
   async function loadDataFromContractWithSigner() {
@@ -122,9 +139,13 @@ function Main() {
     loadDataFromContract(debtContract);
     setDebtContract(debtContract);
     loadRolesFromSmartContract(debtContract, signer.address);
+
+    const paymentAddr = await debtContract.paymentToken();
+    const paymentToken = new Contract(paymentAddr, tokenAbi, signer);
+    setPaymentToken(paymentToken);
   }
-  
-  async function loadRolesFromSmartContract(debtContract: Contract, who: string){
+
+  async function loadRolesFromSmartContract(debtContract: Contract, who: string) {
 
     let roles: string[] = [];
 
@@ -141,13 +162,13 @@ function Main() {
   }
 
 
-  function clearDebt(){
+  function clearDebt() {
     setDebt({
       name: "",
       symbol: "",
       vendor: "",
       rating: "",
-      coupons:[],
+      coupons: [],
     });
   }
 
@@ -182,10 +203,10 @@ function Main() {
         symbol: await contract.symbol(),
         vendor: await contract.vendor(),
         rating: await contract.rating(),
-    
+
         coupons: coupons_
       });
-      
+
       setLoading(false);
     } catch (err) {
       console.log(err);
@@ -256,6 +277,74 @@ function Main() {
     }
   }
 
+
+  useEffect(() => {
+    if (debt && debt.vendor && isNotZeroAddress(debt.vendor)) {
+      let provider = new JsonRpcProvider(network.rpcUrl);
+      const vendorContract = new Contract(debt.vendor, vendorAbi, provider);
+      setVendorContract(vendorContract);
+    };
+  }, [debt])
+
+
+  async function listenToVendor(vendorContract: Contract){
+    console.log(`Vendor contract initialized, check events`);
+
+    const listenerCount = await vendorContract.listenerCount("Sell");
+    console.log(`Listener counts: ${listenerCount}`)
+
+    if(listenerCount == 0){
+      vendorContract.removeAllListeners();
+      vendorContract.on("Sell", (who, qty, event) => {
+         console.log(`Sell event detected:`);
+         console.log(`  Who: ${who}`);
+         console.log(`  Quantity: ${qty.toString()}`);
+         console.log(`  Block number: ${event.blockNumber}`);
+         console.log(`  Transaction hash: ${event.transactionHash}`);
+ 
+         //Update circulating supply
+         updateCirculatingSupply(true);
+       });
+
+       console.log(`Events listener to vendor registered`)
+    }
+  }
+
+  useEffect(() => {
+    if (vendorContract && !hasRunOnce.current) {
+      listenToVendor(vendorContract);
+      hasRunOnce.current = true; // Mark as run
+    }
+  }, [vendorContract]);
+
+  async function updateCirculatingSupply(notify: boolean = false) {
+    const circulating = await debtContract!.getCirculatingSupply();
+    setCirculatingSupply(circulating.toString());
+
+    if(notify){
+      toast('Circulating supply updated', {
+        icon: 'ⓘ',
+      });
+    }
+  }
+
+  useEffect(() => {
+    if (!debtContract) return;
+    updateCirculatingSupply();
+  }, [debtContract])
+
+  const copyToClipboard = () => {
+    if (!address) return;
+    navigator.clipboard.writeText(address).then(() => {
+      toast.success('Address copied to clipboard');
+
+    }).catch(err => {
+      toast.error('Address copied to clipboard');
+      console.error('Could not copy text: ', err);
+    });
+  };
+
+
   return (
     <div>
       <div className="top-right">
@@ -263,7 +352,15 @@ function Main() {
           <button onClick={() => open()} className="connect-wallet-button">Connect wallet</button>
         ) : (
           <div className="current-account">
-            <div>{shortenAddress(address!)} </div>
+            <div>
+              {shortenAddress(address!)}
+
+              <button onClick={copyToClipboard} className="copy-button">
+                <FontAwesomeIcon icon={faCopy} />
+              </button>
+
+
+            </div>
 
             <div className="roles-container">
               {roles.map(role => (
@@ -299,7 +396,7 @@ function Main() {
           <div className="m1">
             <>
               Token:
-              <a className="link" rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/address/${debtAddress}`}>
+              <a className="link" rel="noreferrer" target="_blank" href={`${network.explorerUrl}/address/${debtAddress}`}>
                 <span>
                   {debt.name} ({debt.symbol})
                 </span>
@@ -310,8 +407,14 @@ function Main() {
         {debt && (isNotZeroAddress(debt.vendor)) && (
           <span>
             Vendor:
-            <a className="link" rel="noreferrer" target="_blank" href={`${alfajores.explorerUrl}/address/${debt.vendor}`}>{shortenAddress(debt.vendor)}</a>
+            <a className="link" rel="noreferrer" target="_blank" href={`${network.explorerUrl}/address/${debt.vendor}`}>{shortenAddress(debt.vendor)}</a>
           </span>
+        )}
+        {debt && (
+          <div title="Tokens being held by investors">
+            Circulating supply: &nbsp;
+            {circulatingSupply}
+          </div>
         )}
 
 
@@ -337,10 +440,14 @@ function Main() {
           <div className="spinner-container">
             <div className="spinner"></div>
           </div>
-        ) : debt ? <CouponsTable
-          coupons={debt.coupons}
-          paymentToken={paymentToken}
-        /> : <></>
+        ) : debt ? (
+          <CouponsTable
+            updateCoupon={updateCoupon}
+            contract={debtContract}
+            coupons={debt.coupons}
+            paymentToken={paymentToken}
+            connectedAccount={isConnected ? address : undefined}
+          />) : <></>
       }
 
     </div>

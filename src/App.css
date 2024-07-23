@@ -362,3 +362,26 @@ textarea::placeholder {
   background-color: #1e88e5; /* Darker blue for hover effect */
   box-shadow: 0 0 15px rgba(33, 150, 243, 0.75); /* Enhanced glow effect on hover */
 }
+
+
+
+.copy-button {
+  background-color: #f0f0f0; /* Light background */
+  border: 1px solid #ccc; /* Light border */
+  border-radius: 5px;
+  padding: 5px 7px; /* Padding for better spacing */
+  margin-left: 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.copy-button:hover {
+  background-color: #e0e0e0; /* Slightly darker on hover */
+  border-color: #bbb; /* Darker border on hover */
+}
+
+.copy-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(100, 150, 250, 0.5); /* Focus outline */
+}
