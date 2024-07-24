@@ -411,9 +411,9 @@ function Main() {
         </div>
       </div>
 
-      <div>
+      <div className="debt-info">
         {debt && debt.name && (
-          <div className="m1">
+          <div >
             <>
               Token:
               <a className="link" rel="noreferrer" target="_blank" href={`${network.explorerUrl}/address/${debtAddress}`}>

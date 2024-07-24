@@ -53,6 +53,12 @@ td {
   margin: 10px;
 }
 
+div.debt-info {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
 .eth-address-input {
   padding: 10px;
   font-size: 14px;
