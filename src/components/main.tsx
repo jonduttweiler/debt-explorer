@@ -115,6 +115,7 @@ function Main() {
   const rateRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if(!debtAddress) return;
     if (isConnected) {
       loadDataFromContractWithSigner();
     } else {
