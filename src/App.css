@@ -1,3 +1,7 @@
+body{
+  background-color: #282c34;
+}
+
 .App {
   padding: 8px;
 }
@@ -9,7 +13,6 @@
 }
 
 .App-header {
-  background-color: #282c34;
   min-height: 100vh;
   display: flex;
   font-size: calc(10px + 2vmin);
@@ -52,7 +55,6 @@ td {
 }
 
 .link {
-  background-color: #282c34;
   color: #61dafb;
   text-decoration: none;
   padding: 5px 10px;
@@ -384,4 +386,138 @@ textarea::placeholder {
 .copy-button:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(100, 150, 250, 0.5); /* Focus outline */
+}
+
+
+/* Skeleton CSS */
+.skeleton {
+  background-color: #444;
+  border-radius: 4px;
+  display: inline-block;
+  height: 1.2em;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton::before {
+  content: '';
+  display: block;
+  position: absolute;
+  left: -150px; 
+  top: 0;
+  height: 100%;
+  width: 150px;
+  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    left: -150px;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.action{
+    padding: 5px 10px; 
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #1e88e5;
+    color: white;
+    font-family: 'Roboto';
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 5px rgba(33, 150, 243, 0.5);
+}
+
+.action:hover{
+  background-color: #1e88e5; 
+  box-shadow: 0 0 15px rgba(33, 150, 243, 0.75);  
+}
+
+button.action:disabled {
+  background-color: #999;
+  box-shadow: 0 0 5px rgba(99, 99, 99, 0.5);
+}
+
+.paying {
+  background: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+  background-color: #2196F3;
+  background-size: 40px 40px; /* Size of the stripes */
+  color: #fff;
+  cursor: not-allowed;
+  position: relative;
+  border: none;
+  padding: 5px 10px;
+  text-align: center;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+/* Striped animation */
+@keyframes stripe {
+  0% { background-position: 0 0; }
+  100% { background-position: 40px 0px; }
+}
+
+.paying {
+  animation: stripe 1s linear infinite;
+}
+
+
+.inline-button {
+  display: inline-block;
+  padding: 6px 12px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.3s, text-decoration 0.3s;
+}
+
+.inline-button:hover,
+.inline-button:focus {
+  color: #0056b3;
+  outline: none;
+}
+
+.inline-button:active {
+  color: #004085;
+}
+
+.v-centered {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 10px;
+}
+
+.payable{
+  color: #00a67d;
+}
+
+.claim-button{
+  background-color: #00a67d;
+  box-shadow: 0 0 5px #00a67d;
+}
+
+.claim-button:hover {
+  background-color: #00a67d; /* Darker blue for hover effect */
+  box-shadow: 0 0 15px #00a67d; /* Enhanced glow effect on hover */
+}
+
+
+
+.no-text-cursor{
+  cursor: default;
 }

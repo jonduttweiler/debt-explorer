@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { handleTransactionError, showLoadingToast, showPendingTransactionToast, showTransactionConfirmedToast } from "../toast-utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCopy } from "@fortawesome/free-solid-svg-icons";
+import Skeleton from "./utils/Skeleton";
 
 
 const projectId = "7cc5f0113eb20ca7c4c7cbf31acfc131";
@@ -98,9 +99,13 @@ function Main() {
   const [loading, setLoading] = useState<boolean>(false);
   const [debt, setDebt] = useState<Debt>();
   const [circulatingSupply, setCirculatingSupply] = useState<string>();
+  const [updatingAvailableInterest, setUpdatingAvailableInterest] = useState<boolean>(false);
+  const [availableInterests, setAvailableInterests] = useState<string>();
+
   const [debtContract, setDebtContract] = useState<Contract>();
   const [vendorContract, setVendorContract] = useState<Contract>();
   const [paymentToken, setPaymentToken] = useState<Contract>();
+  const [paymentSymbol, setPaymentSymbol] = useState<string | undefined>();
   const hasRunOnce = useRef(false);
   const [roles, setRoles] = useState<string[]>([]); /* Should be a set */
 
@@ -287,26 +292,26 @@ function Main() {
   }, [debt])
 
 
-  async function listenToVendor(vendorContract: Contract){
+  async function listenToVendor(vendorContract: Contract) {
     console.log(`Vendor contract initialized, check events`);
 
     const listenerCount = await vendorContract.listenerCount("Sell");
     console.log(`Listener counts: ${listenerCount}`)
 
-    if(listenerCount == 0){
+    if (listenerCount == 0) {
       vendorContract.removeAllListeners();
       vendorContract.on("Sell", (who, qty, event) => {
-         console.log(`Sell event detected:`);
-         console.log(`  Who: ${who}`);
-         console.log(`  Quantity: ${qty.toString()}`);
-         console.log(`  Block number: ${event.blockNumber}`);
-         console.log(`  Transaction hash: ${event.transactionHash}`);
- 
-         //Update circulating supply
-         updateCirculatingSupply(true);
-       });
+        console.log(`Sell event detected:`);
+        console.log(`  Who: ${who}`);
+        console.log(`  Quantity: ${qty.toString()}`);
+        console.log(`  Block number: ${event.blockNumber}`);
+        console.log(`  Transaction hash: ${event.transactionHash}`);
 
-       console.log(`Events listener to vendor registered`)
+        //Update circulating supply
+        updateCirculatingSupply(true);
+      });
+
+      console.log(`Events listener to vendor registered`)
     }
   }
 
@@ -321,16 +326,35 @@ function Main() {
     const circulating = await debtContract!.getCirculatingSupply();
     setCirculatingSupply(circulating.toString());
 
-    if(notify){
+    if (notify) {
       toast('Circulating supply updated', {
         icon: 'ⓘ',
       });
     }
   }
+  async function updateAvailableInterests() {
+    if (!paymentToken || !debtContract) return;
+    setUpdatingAvailableInterest(true);
+    try {
+      const paymentBalance = await paymentToken.balanceOf(debtContract.target);
+      const symbol = await paymentToken.symbol();
+      setUpdatingAvailableInterest(false);
+      setAvailableInterests(`${Number(formatEther(paymentBalance)).toFixed(3)} ${symbol}`);
+      setPaymentSymbol(symbol);
+    } catch (err) {
+      console.log(err);
+      setUpdatingAvailableInterest(false);
+    }
+
+
+  }
+
+
 
   useEffect(() => {
     if (!debtContract) return;
     updateCirculatingSupply();
+    updateAvailableInterests();
   }, [debtContract])
 
   const copyToClipboard = () => {
@@ -416,7 +440,11 @@ function Main() {
             {circulatingSupply}
           </div>
         )}
+        <div>
+          Available Interests: &nbsp;
+          {updatingAvailableInterest ? <Skeleton w={50} /> : availableInterests}
 
+        </div>
 
         {debt && debt.rating && "Rating: " + debt!.rating}
       </div>
@@ -446,7 +474,17 @@ function Main() {
             contract={debtContract}
             coupons={debt.coupons}
             paymentToken={paymentToken}
+            paymentSymbol="Cusd"
             connectedAccount={isConnected ? address : undefined}
+            onPaymentMade={async (index) => {
+              updateCoupon(index);
+              updateAvailableInterests();
+            }}
+            onRedeemMade={async (index) => {
+              updateCoupon(index);
+              updateAvailableInterests();
+              return;
+            }}
           />) : <></>
       }
 
