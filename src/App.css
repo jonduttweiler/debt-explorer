@@ -15,24 +15,8 @@ body{
 .App-header {
   min-height: 100vh;
   display: flex;
-  font-size: calc(10px + 2vmin);
   color: white;
 }
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 
 table {
   width: 100%;
@@ -42,16 +26,14 @@ table {
 th,
 td {
   padding: 10px 15px;
-  /* 10px vertical padding, 15px horizontal padding */
   text-align: left;
-  /* Align text to the left */
   border: 1px solid #ddd;
-  /* Add a light border to cells */
 }
 
 
 .table-coupons {
   margin-top: 20px;
+  max-width: 1500px;
 }
 
 .link {
@@ -119,11 +101,6 @@ td {
   }
 }
 
-
-td,
-th {
-  font-size: 0.8em;
-}
 
 /* Example theme colors */
 :root {

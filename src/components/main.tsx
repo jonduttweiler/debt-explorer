@@ -380,8 +380,6 @@ function Main() {
               <button onClick={copyToClipboard} className="copy-button">
                 <FontAwesomeIcon icon={faCopy} />
               </button>
-
-
             </div>
 
             <div className="roles-container">
