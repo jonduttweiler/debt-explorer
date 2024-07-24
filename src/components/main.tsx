@@ -475,6 +475,7 @@ function Main() {
             coupons={debt.coupons}
             paymentToken={paymentToken}
             paymentSymbol="Cusd"
+            roles={roles}
             connectedAccount={isConnected ? address : undefined}
             onPaymentMade={async (index) => {
               updateCoupon(index);

@@ -75,9 +75,10 @@ interface CouponsTableProps {
   updateCoupon(index: number): Promise<void>;
   onPaymentMade?(index: number): Promise<void>;
   onRedeemMade?(index: number): Promise<void>;
+  roles: string[];
 }
 
-const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentToken, paymentSymbol, connectedAccount, updateCoupon, onPaymentMade, onRedeemMade }) => {
+const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentToken, paymentSymbol, connectedAccount, roles, updateCoupon, onPaymentMade, onRedeemMade }) => {
 
   const [isPaying, setIsPaying] = useState<number | undefined>();
   const [isClaiming, setIsClaiming] = useState<number | undefined>();
@@ -87,7 +88,7 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
   const [interests, setInterests] = useState<any[]>([]);
   const [circulatingSupply, setCirculatingSupply] = useState<any[]>([]);
 
-
+  
   useEffect(() => {
     async function getInterests() {
       if (contract) {
@@ -279,7 +280,8 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
 
   }
 
-
+  const isAdmin = roles.includes("BOND ADMIN ROLE");
+  const canDeposit = roles.includes("BOND DEPOSIT ROLE");
 
   return (
     <div className="table-coupons">
@@ -341,7 +343,7 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
                   <>
                     <td>{interests[i] && (
                       <>
-                        {coupon.status == 0 && (
+                        {coupon.status == 0 && canDeposit && (
                           <button
                             disabled={isPaying !== undefined && isPaying !== i}
                             onClick={() => payInterestOfCoupon(i)}
@@ -352,7 +354,7 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
                             </> : 'Pay'}
                           </button>
                         )}
-                        {coupon.status == 1 && (
+                        {coupon.status == 1  && (
                           <button
                             disabled={isClaiming !== undefined && isClaiming !== i || claimable[i] == 0}
                             onClick={() => claimInterestOfCoupon(i)}
