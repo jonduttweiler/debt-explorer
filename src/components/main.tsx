@@ -196,8 +196,6 @@ function Main() {
         coupons: []
       });
 
-
-
       let coupons_ = [];
       for (let i = 0; i < Number(couponsN); i++) {
         const coupon = await contract.coupons(i);
@@ -208,7 +206,7 @@ function Main() {
         symbol: await contract.symbol(),
         vendor: await contract.vendor(),
         rating: await contract.rating(),
-
+        minRate: `${Number(ethValue) * 100} %`,
         coupons: coupons_
       });
 
@@ -448,14 +446,14 @@ function Main() {
 
         {debt && debt.rating && "Rating: " + debt!.rating}
       </div>
-      {debt && debt.minRate && debt.minRate.length > 0 && (
+     {/*  {debt && debt.minRate && debt.minRate.length > 0 && (
         <div>
           Annual Min Rate: {debt?.minRate}
         </div>
-      )}
+      )} */}
 
 
-      {signer != null && (
+      {signer != null && roles.includes("BOND ADMIN ROLE") && (
         <div className="row m1">
           <input type="text" className="sm-input" ref={cIndexRef} placeholder="Index" />
           <input type="text" className="sm-input" ref={rateRef} placeholder="rate %" />

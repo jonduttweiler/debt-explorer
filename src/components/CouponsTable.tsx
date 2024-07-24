@@ -297,10 +297,10 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
             <th>Status</th>
             <th>Circulating<br />supply</th>
             <th>Total Interest <br /> to pay</th> {/* Esto deberia ser si el connected tiene el rol de pagar */}
-            <th>Your balance <br /> at cutoff</th>
-            <th>Your Claimable<br />Interest </th>
             {connectedAccount && (
               <>
+              <th>Your balance <br /> at cutoff</th>
+              <th>Your Claimable<br />Interest </th>
                 <th>Actions</th>
               </>
             )}
@@ -337,10 +337,10 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
                 </td>
                 <td>{loading ? <Skeleton w={50} /> : circulatingSupply[i]?.toString()}</td>
                 <td>{loading ? <Skeleton w={50} /> : interests[i] && Number(formatEther(interests[i])).toFixed(5)}</td>
-                <td>{loading ? <Skeleton w={50} /> : balances[i]?.toString()}</td>
-                <td>{loading ? <Skeleton w={50} /> : claimable[i] && Number(formatEther(claimable[i])).toFixed(5)}</td>
                 {connectedAccount && (
                   <>
+                  <td>{loading ? <Skeleton w={50} /> : balances[i]?.toString()}</td>
+                  <td>{loading ? <Skeleton w={50} /> : claimable[i] && Number(formatEther(claimable[i])).toFixed(5)}</td>
                     <td>{interests[i] && (
                       <>
                         {coupon.status == 0 && canDeposit && (
