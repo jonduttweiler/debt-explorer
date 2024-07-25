@@ -94,7 +94,7 @@ const PaymentsHistory: React.FC<PaymentsHistoryProps> = ({ contract, paymentSymb
           ))}
         </tbody>
       </table>
-      {syncCounter  }
+
     </div>
   );
 };
