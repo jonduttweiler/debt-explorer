@@ -9,9 +9,10 @@ interface PaymentsHistoryProps {
   roles: string[];
   paymentSymbol?: string;
   explorerUrl: string;
+  syncCounter: number
 }
 
-const PaymentsHistory: React.FC<PaymentsHistoryProps> = ({ contract, paymentSymbol, explorerUrl }) => {
+const PaymentsHistory: React.FC<PaymentsHistoryProps> = ({ contract, paymentSymbol, explorerUrl, syncCounter }) => {
   const [paidEvents, setPaidEvents] = useState<Paid[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -48,7 +49,7 @@ const PaymentsHistory: React.FC<PaymentsHistoryProps> = ({ contract, paymentSymb
 
   useEffect(() => {
     getPastEvents();
-  }, [contract]);
+  }, [contract, syncCounter]);
 
   if (loading) {
     return (
@@ -93,6 +94,7 @@ const PaymentsHistory: React.FC<PaymentsHistoryProps> = ({ contract, paymentSymb
           ))}
         </tbody>
       </table>
+      {syncCounter  }
     </div>
   );
 };

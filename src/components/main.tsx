@@ -89,7 +89,7 @@ function Main() {
   const [paymentSymbol, setPaymentSymbol] = useState<string | undefined>();
   const hasRunOnce = useRef(false);
   const [roles, setRoles] = useState<string[]>([]); /* Should be a set */
-
+  const [syncCounter, setSyncCounter] = useState<number>(0);
 
 
   const cIndexRef = useRef<HTMLInputElement>(null);
@@ -489,6 +489,7 @@ function Main() {
               onRedeemMade={async (index) => {
                 updateCoupon(index);
                 updateAvailableInterests();
+                setSyncCounter(sc => sc+1);
                 return;
               }}
             />
@@ -500,6 +501,7 @@ function Main() {
                 roles={roles}
                 paymentSymbol={paymentSymbol}
                 explorerUrl={network.explorerUrl}
+                syncCounter={syncCounter}
               />
 
             )}

@@ -511,3 +511,7 @@ button.action:disabled {
   margin-top: 30px;
   margin-bottom: 30px;
 }
+
+th.actions{
+  min-width: 100px;
+}

@@ -207,6 +207,12 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
     } catch (err) {
       console.log(err);
       toast.dismiss(toast1);
+      if (err instanceof Error) {
+        toast.error(err.message);
+    } else {
+        // Handle unexpected error types
+        toast.error("An unknown error occurred");
+    }
 
     }
     setIsClaiming(undefined);
@@ -247,7 +253,7 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
               <>
               <th>Your balance <br /> at cutoff</th>
               <th>Your Claimable<br />Interest {`(${paymentSymbol})`}</th>
-                <th>Actions</th>
+                <th className="actions">Actions</th>
               </>
             )}
           </tr>
