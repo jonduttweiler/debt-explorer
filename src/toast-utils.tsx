@@ -1,6 +1,7 @@
 import { formatEther, isError } from 'ethers';
 import toast, { CheckmarkIcon, ErrorIcon, LoaderIcon } from 'react-hot-toast';
-import { alfajores, shortenAddress } from './components/main';
+import { alfajores } from './components/main';
+import { shortenAddress } from './utils';
 
 export function showPendingTransactionToast(txHash: string, toastId: string) {
   toast(

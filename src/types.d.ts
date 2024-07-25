@@ -36,3 +36,31 @@ interface EIP6963ProviderInfo {
     code?: string
     message?: string
   }
+
+  interface Debt {
+    name: string;
+    symbol: string;
+    rating?: string;
+    vendor: string; /* This should be an address */
+    coupons: any[];
+    minRate?: string
+  }
+  
+  interface Coupon {
+    start_date: bigint;
+    cutoff_date: bigint;
+    payment_date: bigint;
+    annual_interest_rate: bigint;
+    par_value: number;
+    actual_payment_date: bigint;
+    status: number;
+  }
+  
+
+  interface Paid{
+    tx?: string;
+    when: number;
+    who: string;
+    couponIndex: any; //Could be string, could be bn
+    amount: any; //Could be string, could be bn
+  }

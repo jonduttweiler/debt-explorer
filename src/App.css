@@ -19,7 +19,6 @@ body{
 }
 
 table {
-  width: 100%;
   border-collapse: collapse;
 }
 
@@ -36,6 +35,9 @@ td {
   max-width: 1500px;
 }
 
+.table-coupons__table {
+  width: 100%;
+}
 .link {
   color: #61dafb;
   text-decoration: none;
@@ -503,4 +505,9 @@ button.action:disabled {
 
 .no-text-cursor{
   cursor: default;
+}
+
+.section{
+  margin-top: 30px;
+  margin-bottom: 30px;
 }

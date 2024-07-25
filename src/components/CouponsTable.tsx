@@ -2,6 +2,7 @@ import { Contract, formatEther } from "ethers";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import Skeleton from "./utils/Skeleton";
+import { formatDate, formatStatus, getCouponRate } from "../utils";
 
 declare global {
   interface Window {
@@ -10,61 +11,6 @@ declare global {
 }
 
 window.toast = toast;
-
-const sleep = (ms: number = 1000) => (new Promise((resolve, reject) => { setTimeout(() => resolve(ms), ms) }))
-const formatDateStr = (date: Date, full: boolean = false) => {
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-
-  let formattedDate = `${day}/${month}/${year}`;
-
-  if (full) {
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    formattedDate += ` ${hours}:${minutes}:${seconds}`;
-  }
-
-  return formattedDate;
-}
-
-const formatDate = (timestampSeconds: BigInt, full: boolean = false) => {
-  const date = new Date(Number(timestampSeconds) * 1000);
-  return formatDateStr(date, full);
-}
-
-const formatStatus = (status: Number) => {
-  switch (Number(status)) {
-    case 0: return "Scheduled";
-    case 1: return "Payable";
-    default: return "";
-  }
-}
-
-const getCouponRate = (coupon: Coupon) => {
-  const yearInSeconds = 31557600;
-  const f = Number(coupon.cutoff_date - coupon.start_date) / yearInSeconds;
-
-  const yearRate = Number(formatEther(coupon.annual_interest_rate));
-
-  let fRate = yearRate * f * 100;
-
-
-  return `${fRate.toFixed(2)} %` //${formatEther(1n* 100n)
-}
-
-
-interface Coupon {
-  start_date: bigint;
-  cutoff_date: bigint;
-  payment_date: bigint;
-  annual_interest_rate: bigint;
-  par_value: number;
-  actual_payment_date: bigint;
-  status: number;
-}
 
 interface CouponsTableProps {
   coupons: Coupon[];
@@ -92,7 +38,7 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
   useEffect(() => {
     async function getInterests() {
       if (contract) {
-        console.log(`Get interests from contract`);
+        console.log(`[${new Date()}]Get interests from contract`);
 
         const interests = new Array(coupons.length);
         const circulating = new Array(coupons.length);
@@ -285,7 +231,7 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
 
   return (
     <div className="table-coupons">
-      <table>
+      <table className="table-coupons__table">
         <thead>
           <tr>
             <th>Coupon</th>
@@ -296,11 +242,11 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
             <th>Nominal <br />Value <br />{paymentSymbol? `(${paymentSymbol})` : ""}</th> {/* Get payment token from contract*/}
             <th>Status</th>
             <th>Circulating<br />supply</th>
-            <th>Total Interest <br /> to pay</th> {/* Esto deberia ser si el connected tiene el rol de pagar */}
+            <th>Total Interest <br /> to pay {`(${paymentSymbol})`}</th> {/* Esto deberia ser si el connected tiene el rol de pagar */}
             {connectedAccount && (
               <>
               <th>Your balance <br /> at cutoff</th>
-              <th>Your Claimable<br />Interest </th>
+              <th>Your Claimable<br />Interest {`(${paymentSymbol})`}</th>
                 <th>Actions</th>
               </>
             )}

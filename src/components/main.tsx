@@ -7,12 +7,14 @@ import vendorAbi from "../contracts/vendor.abi.json";
 import CouponsTable from "./CouponsTable";
 import { createWeb3Modal, defaultConfig, useDisconnect, useWeb3ModalAccount, useWeb3ModalProvider } from '@web3modal/ethers/react'
 import { useWeb3Modal } from '@web3modal/ethers/react'
-import { BrowserProvider, Contract, formatEther, isAddress, JsonRpcProvider, JsonRpcSigner, keccak256, toUtf8Bytes, TransactionResponse, ZeroAddress } from "ethers";
+import { BrowserProvider, Contract, formatEther, JsonRpcProvider, JsonRpcSigner, keccak256, toUtf8Bytes, TransactionResponse } from "ethers";
 import toast from 'react-hot-toast';
 import { handleTransactionError, showLoadingToast, showPendingTransactionToast, showTransactionConfirmedToast } from "../toast-utils";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCopy } from "@fortawesome/free-solid-svg-icons";
 import Skeleton from "./utils/Skeleton";
+import PaymentHistory from "./PaymentHistory";
+import { isNotZeroAddress, shortenAddress } from "../utils";
 
 
 const projectId = "7cc5f0113eb20ca7c4c7cbf31acfc131";
@@ -51,27 +53,6 @@ const VALIDATOR_ROLE = keccak256(toUtf8Bytes("VALIDATOR_ROLE"));
 const BOND_ADMIN_ROLE = keccak256(toUtf8Bytes("BOND_ADMIN_ROLE"));
 const BOND_DEPOSIT_ROLE = keccak256(toUtf8Bytes("BOND_DEPOSIT_ROLE"));
 
-
-const isNotZeroAddress = (address: string) => {
-  return isAddress(address) && address.toLowerCase() !== ZeroAddress;
-}
-
-export const shortenAddress = (address: string) => {
-  if (address.length > 10) {
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4, address.length)}`;
-  }
-  return address;
-}
-
-
-interface Debt {
-  name: string;
-  symbol: string;
-  rating?: string;
-  vendor: string; /* This should be an address */
-  coupons: any[];
-  minRate?: string
-}
 
 
 //0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d
@@ -115,7 +96,7 @@ function Main() {
   const rateRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if(!debtAddress) return;
+    if (!debtAddress) return;
     if (isConnected) {
       loadDataFromContractWithSigner();
     } else {
@@ -145,10 +126,36 @@ function Main() {
     loadDataFromContract(debtContract);
     setDebtContract(debtContract);
     loadRolesFromSmartContract(debtContract, signer.address);
+    getPastEvents(debtContract);
 
     const paymentAddr = await debtContract.paymentToken();
     const paymentToken = new Contract(paymentAddr, tokenAbi, signer);
     setPaymentToken(paymentToken);
+  }
+
+  async function getPastEvents(contract: Contract) { /* We can filter or not by address */
+    const filter = contract.filters.CouponPaid();
+    const fromBlock = 0;
+    const toBlock = "latest";
+
+    const events = await contract.queryFilter(filter, fromBlock, toBlock);
+
+    const paids: Paid[] = (await Promise.all(events.map(async event => {
+      if ("args" in event) {
+        const { couponIndex, who, tokenAmount } = event.args;
+        const paid: Paid = {
+          tx: event.transactionHash,
+          when: (await event.getBlock()).timestamp * 1000,
+          who: who,
+          couponIndex: couponIndex,
+          amount: tokenAmount
+        };
+        return paid;
+      }
+    }))).filter(paid => paid != undefined);
+
+
+    console.log(paids);
   }
 
   async function loadRolesFromSmartContract(debtContract: Contract, who: string) {
@@ -232,7 +239,7 @@ function Main() {
 
 
 
-  async function sendTransaction() {
+  async function sendTransaction() {  /* Move to a dedicated component */
 
     if (!debtContract) return;
     if (cIndexRef.current && rateRef.current) {
@@ -299,7 +306,7 @@ function Main() {
 
     if (listenerCount == 0) {
       vendorContract.removeAllListeners();
-      vendorContract.on("Sell", (who, qty, event) => {
+      vendorContract.on("Sell", (who, qty, event) => { //TODO: TAMBIEN ESCUCHAR AL BUYBACK
         console.log(`Sell event detected:`);
         console.log(`  Who: ${who}`);
         console.log(`  Quantity: ${qty.toString()}`);
@@ -445,7 +452,7 @@ function Main() {
 
         {debt && debt.rating && "Rating: " + debt!.rating}
       </div>
-     {/*  {debt && debt.minRate && debt.minRate.length > 0 && (
+      {/*  {debt && debt.minRate && debt.minRate.length > 0 && (
         <div>
           Annual Min Rate: {debt?.minRate}
         </div>
@@ -466,24 +473,40 @@ function Main() {
             <div className="spinner"></div>
           </div>
         ) : debt ? (
-          <CouponsTable
-            updateCoupon={updateCoupon}
-            contract={debtContract}
-            coupons={debt.coupons}
-            paymentToken={paymentToken}
-            paymentSymbol="Cusd"
-            roles={roles}
-            connectedAccount={isConnected ? address : undefined}
-            onPaymentMade={async (index) => {
-              updateCoupon(index);
-              updateAvailableInterests();
-            }}
-            onRedeemMade={async (index) => {
-              updateCoupon(index);
-              updateAvailableInterests();
-              return;
-            }}
-          />) : <></>
+          <>
+            <CouponsTable
+              updateCoupon={updateCoupon}
+              contract={debtContract}
+              coupons={debt.coupons}
+              paymentToken={paymentToken}
+              paymentSymbol={paymentSymbol}
+              roles={roles}
+              connectedAccount={isConnected ? address : undefined}
+              onPaymentMade={async (index) => {
+                updateCoupon(index);
+                updateAvailableInterests();
+              }}
+              onRedeemMade={async (index) => {
+                updateCoupon(index);
+                updateAvailableInterests();
+                return;
+              }}
+            />
+
+            {debtContract && isConnected && (
+              <PaymentHistory
+                connectedAccount={address}
+                contract={debtContract}
+                roles={roles}
+                paymentSymbol={paymentSymbol}
+                explorerUrl={network.explorerUrl}
+              />
+
+            )}
+
+
+          </>
+        ) : <></>
       }
 
     </div>
