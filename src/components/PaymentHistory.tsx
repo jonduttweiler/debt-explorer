@@ -65,35 +65,42 @@ const PaymentsHistory: React.FC<PaymentsHistoryProps> = ({ contract, paymentSymb
   return (
     <div className="payments-container section">
       <h2>Payments History</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>When</th>
-            <th>Transaction Hash</th>
-            <th>Who</th>
-            <th>Coupon Index</th>
-            <th>Amount {`(${paymentSymbol})`}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paidEvents.map((event, index) => (
-            <tr key={index}>
-              <td>{formatDate(BigInt(event.when), true)}</td>
-              <td>
-                <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/tx/${event.tx}`}>
-                  {event.tx && shortenAddress(event.tx)}
-                </a></td>
-              <td>
-                <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${event.who}`}>
-                  {shortenAddress(event.who)}
-                </a>
-              </td>
-              <td>{event.couponIndex.toString()}</td>
-              <td>{formatEther(event.amount)}</td>
+
+      {paidEvents.length == 0 && (
+        <div>No paid events found</div>
+      )}
+      {paidEvents.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Transaction Hash</th>
+              <th>Who</th>
+              <th>Coupon Index</th>
+              <th>Amount {`(${paymentSymbol})`}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {paidEvents.map((event, index) => (
+              <tr key={index}>
+                <td>{formatDate(BigInt(event.when), true)}</td>
+                <td>
+                  <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/tx/${event.tx}`}>
+                    {event.tx && shortenAddress(event.tx)}
+                  </a></td>
+                <td>
+                  <a className="link" rel="noreferrer" target="_blank" href={`${explorerUrl}/address/${event.who}`}>
+                    {shortenAddress(event.who)}
+                  </a>
+                </td>
+                <td>{event.couponIndex.toString()}</td>
+                <td>{formatEther(event.amount)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+
 
     </div>
   );
