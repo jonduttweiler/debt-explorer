@@ -191,7 +191,7 @@ const CouponsTable: React.FC<CouponsTableProps> = ({ contract, coupons, paymentT
         </>
       ));
 
-      const tx1 = await contract!.reedemCoupon(index);
+      const tx1 = await contract!.redeemCoupon(index);
       console.log(tx1);
       toast.dismiss(toast1);
       await tx1.wait();
