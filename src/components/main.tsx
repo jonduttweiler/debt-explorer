@@ -53,22 +53,6 @@ const VALIDATOR_ROLE = keccak256(toUtf8Bytes("VALIDATOR_ROLE"));
 const BOND_ADMIN_ROLE = keccak256(toUtf8Bytes("BOND_ADMIN_ROLE"));
 const BOND_DEPOSIT_ROLE = keccak256(toUtf8Bytes("BOND_DEPOSIT_ROLE"));
 
-
-
-//0xcb13dd3cdeef68fb54ab7a1ab404c92ae04c047d
-//0x2b3a9258145d736d93dd2e501e11fa24c7a87ee0
-//0x4c2f335fc5289be901e358755f029a655b984e25 //new abi
-//0x95f92dE0EE45CD978E10D44c68fE893bAF2Cfb07//new abi
-//0x7e0c4506b47a0bb968892b5f203e13a9dc2b43c4  nominal price 10 usd
-//0xb3cb3436bdde65709dc8cd64fb633a56e45720a9 nominal price 2.5 usd
-//0x2fc30088a8864df21053d614b74dbfb4f2176f40 nominal price 0.5 usd
-//0x9D53937170b5034e0356ff39e0530A667a807abD 1 day coupon length
-
-
-//0x21677d46972ef610e26aec7ce1356517db901c6c 1 day 1 dolar
-//0x67d1879a17c51c15b7c9e5786e553b42cca493e4 1 hour 1 dolar
-
-
 function Main() {
   const { address: debtAddressParam } = useParams();
   const { open } = useWeb3Modal();
@@ -76,7 +60,7 @@ function Main() {
   const { address, isConnected } = useWeb3ModalAccount();
   const { walletProvider } = useWeb3ModalProvider();
   const [signer, setSigner] = useState<JsonRpcSigner | null>();
-  const [debtAddress, setDebtAddress] = useState<string>(debtAddressParam || "0x67d1879a17c51c15b7c9e5786e553b42cca493e4");
+  const [debtAddress, setDebtAddress] = useState<string>(debtAddressParam || "0xceb83c062ae396fa398596650688bf8c61467258");
   const [loading, setLoading] = useState<boolean>(false);
   const [debt, setDebt] = useState<Debt>();
   const [circulatingSupply, setCirculatingSupply] = useState<string>();
